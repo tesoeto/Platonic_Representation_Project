@@ -1,0 +1,72 @@
+<!-- SECTION: Refined Hypothesis -->
+<section id="refined-hypothesis">
+  <h2>A Refined Hypothesis</h2>
+
+  <p>
+    We refine the platonic hypothesis to account for the recent discoveries made by Anthropic and others, while also trying to reconcile with the finding that a well-performing neural network may resemble that of a human brain. We also try to incorporate the hypothesis to explain why CKNNA performs better.
+  </p>
+
+  <h3>The Lobe Structure of Representation Space</h3>
+
+  <p>
+    We develop some intuitions by considering a toy model: Let's consider grouping of locally similar neighbors $L_i$ that have similar representations together and represent each neighbor with a node. In other words, we group feature vectors that have similar meaning as a single point. We could group the representation vectors in the same spirit as K-means or the EM algorithm.
+  </p>
+
+  <p>
+    But to make sure that we can compare two different models, we need to pick the initial points carefully. One way we can do this is: for each task $x_i$, we identify which neuron fires the most and pick such vector as the starting point, and we do this for each datapoint in $\{x_i\}$. We also connect the different nodes using edges $e \in E$, with the interpretation that the edges are used to interchange information with each other when solving tasks.
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Central Hypothesis: Local Alignment</div>
+    <p>
+      Instead of aligning globally, the alignment should happen primarily <strong>locally</strong>. We could treat each neighborhood as a subspace and demand invariance under rotation and local scaling.
+    </p>
+  </div>
+
+  <h3>Mathematical Formulation</h3>
+
+  <p>
+    We identify the mean of the lobe $\mu_x$ and demand that the representation be invariant under rotation and scaling <em>relative to the mean within the cluster</em>. Specifically, the vector space $\{x - \mu_i \mid x \in L_i\}$ should be equivalent to $\{\alpha T(x - \mu_i) \mid x \in L_i\}$ with $T$ being a rotation and $\alpha$ being a scaling factor.
+  </p>
+
+  <p>
+    To preserve the linear representation hypothesis roughly, we modify the classic analogy equation as:
+  </p>
+
+  <div class="math-block">
+    $$L(\text{King}) - L(\text{Queen}) \approx L(\text{Man}) - L(\text{Woman})$$
+    <div class="caption">
+      Where $L(\cdot)$ denotes the cluster centroid of the input. This makes sense as long as the lobe is small enough to align with the linear representation hypothesis locally.
+    </div>
+  </div>
+
+  <h3>Why This Explains CKNNA's Superiority</h3>
+
+  <p>
+    Our hypothesis helps to explain why CKNNA performs better than CKA: <strong>CKNNA extracts only the k-nearest neighbor points that are likely to belong to the same neighborhood, while ignoring vectors that are far apart from each other that share less similarities.</strong>
+  </p>
+
+  <p>
+    The key insight is that different models may organize their global geometry differently—one model might have elongated clusters, another might have spherical ones—but within each cluster, the relative positions of points are more constrained by the task. CKA sees the global differences and reports lower alignment. CKNNA sees only the local agreement and reports higher alignment.
+  </p>
+
+  <div class="insight">
+    This also connects to neuroscience: the brain organizes knowledge into localized "lobes" that specialize in different functions. If neural networks are converging toward some universal representation, it makes sense that this convergence would manifest locally—at the level of specialized "neighborhoods"—before appearing globally.
+  </div>
+
+  <h3>Implications for the Platonic Representation Hypothesis</h3>
+
+  <p>
+    Our refined hypothesis suggests a more nuanced version of the PRH:
+  </p>
+
+  <ul>
+    <li><strong>Local convergence is primary:</strong> The "Platonic ideal" that models converge toward may be better understood as a <em>local</em> property—agreement on similarity structure within neighborhoods—rather than a global geometric constraint.</li>
+    <li><strong>Global structure is under-determined:</strong> The data may not uniquely specify how neighborhoods should be arranged relative to each other. This explains why different models can achieve similar performance with different global geometries.</li>
+    <li><strong>Scale enables global alignment:</strong> Larger models may achieve better global alignment simply because they have the capacity to discover a more "canonical" arrangement of the locally-aligned neighborhoods.</li>
+  </ul>
+
+  <p>
+    Unfortunately, due to time and resource constraints, we are not able to develop rigorous tests of this hypothesis, but we encourage readers to expand on this idea.
+  </p>
+</section>

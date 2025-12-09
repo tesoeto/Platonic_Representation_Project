@@ -1,0 +1,75 @@
+<!-- SECTION: Experiment Setup -->
+<section id="experiments">
+  <h2>Experiment Setup</h2>
+
+  <h3>Model: Pythia</h3>
+
+  <p>
+    We use the <strong>Pythia</strong> suite of language models <span class="citation">[Biderman et al., 2023]</span>, which provides a unique resource for studying training dynamics. Unlike most released models, Pythia includes checkpoints saved throughout training, allowing us to analyze how representations evolve over time.
+  </p>
+
+  <p>
+    Key properties of Pythia that make it ideal for our study:
+  </p>
+
+  <ul>
+    <li><strong>Multiple scales:</strong> Models range from 70M to 12B parameters, enabling us to test how scale affects representation convergence.</li>
+    <li><strong>Consistent training:</strong> All models trained on the same data (The Pile) with the same hyperparameters (relative to scale), isolating the effect of model size.</li>
+    <li><strong>Dense checkpoints:</strong> Checkpoints available at steps 0, 1, 2, 4, 8, 16, ..., 143,000, providing fine-grained visibility into training dynamics.</li>
+  </ul>
+
+  <h3>Dataset: WikiText-2</h3>
+
+  <p>
+    For our experiments, we use text samples from the <strong>WikiText-2-raw-v1</strong> dataset. This dataset provides high-quality Wikipedia articles that serve as a good test bed for analyzing language model representations. The text is relatively clean and covers diverse topics, making it suitable for probing general language understanding.
+  </p>
+
+  <h3>Experimental Protocol</h3>
+
+  <p>
+    Our experiments follow a consistent protocol designed to isolate the effect of training progress on representation alignment:
+  </p>
+
+  <ol>
+    <li><strong>Select checkpoints:</strong> We compare representations at checkpoint $t$ against the final checkpoint to measure convergence toward the "mature" representation.</li>
+    <li><strong>Extract representations:</strong> For a fixed set of input examples, we extract the hidden states at specific layers. We obtain representations by mean-pooling across sequence positions.</li>
+    <li><strong>Compute kernel matrices:</strong> Using linear kernel, compute pairwise similarity matrices $K_t$ and $K_{\text{final}}$.</li>
+    <li><strong>Compute alignment:</strong> Calculate both CKA and CKNNA between $K_t$ and $K_{\text{final}}$.</li>
+  </ol>
+
+  <h3>Experiment Configurations</h3>
+
+  <p>
+    We run two main types of experiments:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Experiment 1: Training Dynamics</div>
+    <p>
+      We track how representation alignment evolves across training checkpoints for a single model. Using <strong>150 samples</strong> from WikiText-2 with <strong>k=16</strong> for CKNNA, we measure alignment at checkpoints from step 4,000 to step 128,000 against the final trained model.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Experiment 2: Model Scale</div>
+    <p>
+      We compare representations across Pythia models of different sizes (70M, 160M, 410M, 1B, 1.4B, 2.8B) at their final checkpoints. Using <strong>400 samples</strong> with <strong>k=100</strong> for CKNNA, we measure pairwise alignment to test whether larger models converge to more similar representations.
+    </p>
+  </div>
+
+  <h3>Why These Choices?</h3>
+
+  <p>
+    The parameter choices balance statistical stability with computational feasibility:
+  </p>
+
+  <ul>
+    <li><strong>k=16 for dynamics:</strong> With 150 samples, k=16 means each point's neighborhood contains about 10% of the data—large enough to be statistically meaningful but small enough to reflect genuinely local structure.</li>
+    <li><strong>k=100 for scale:</strong> With 400 samples, k=100 provides richer neighborhood information while still focusing on local relationships.</li>
+    <li><strong>Final checkpoint as reference:</strong> We measure alignment relative to the final trained model, treating it as the "converged" representation against which we measure progress.</li>
+  </ul>
+
+  <div class="insight">
+    Computing the mutual k-NN mask from the final checkpoint ensures we're asking a consistent question: "How well does this intermediate representation capture the neighborhood structure that the model eventually learns?"
+  </div>
+</section>

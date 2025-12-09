@@ -1,102 +1,61 @@
-<!-- Section: Platonic Representation Formulation -->
+<!-- SECTION: Platonic Representation Formulation -->
 <section id="formulation">
   <h2>Platonic Representation Formulation</h2>
 
   <p>
-    Before we can measure whether representations are converging, we need precise mathematical language for what a "representation" even is, and how to compare two of them. This section builds that framework from first principles.
-  </p>
-
-  <h3>What Is a Representation?</h3>
-
-  <p>
-    A neural network transforms raw inputs into internal codes. Formally, a <strong>vector representation</strong> of an input $x \in \mathcal{X}$ is a mapping from the data space to a target vector space:
+    We provide an overview of previous established concepts in literatures. A vector representation of an input $x \in \mathcal{X}$ is defined to be a mapping from the data space $\mathcal{X}$ to the target space $\mathbb{R}^n$, provided by the formula:
   </p>
 
   <div class="math-block">
     $$f: \mathcal{X} \rightarrow \mathbb{R}^n$$
     <div class="caption">
-      The function $f$ takes any input (an image, a sentence, an audio clip) and produces an $n$-dimensional vector. This vector is the model's internal "understanding" of that input.
+      The representation function maps each input from the data space to a point in n-dimensional Euclidean space. This is the fundamental object we study when comparing models.
     </div>
   </div>
 
   <p>
-    Think of $f$ as the model's lens on the world. Two different models—or the same model at different training stages—will have different $f$ functions. Our goal is to compare these functions meaningfully.
-  </p>
-
-  <h3>The Problem: How to Compare Different Spaces?</h3>
-
-  <p>
-    Here's the fundamental challenge: if model A produces 768-dimensional representations and model B produces 1024-dimensional representations, we can't directly compare their vectors. Even if they have the same dimension, the axes might mean completely different things—rotated, scaled, or permuted arbitrarily.
-  </p>
-
-  <div class="insight">
-    The key insight: we don't care about the <em>absolute</em> representation of any single point. We care about <strong>relationships between points</strong>. If two models agree that "cat" is similar to "dog" but distant from "democracy," they've captured something in common—even if their internal coordinates look nothing alike.
-  </div>
-
-  <h3>Kernels: Measuring Similarity Structure</h3>
-
-  <p>
-    This motivates the use of <strong>kernel functions</strong>. A kernel measures the similarity between representations of two data points:
+    To characterize the representation space, kernel $\mathcal{K}$ is introduced, which measures the similarity between the representations of the data points as:
   </p>
 
   <div class="math-block">
     $$\mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}, \quad \mathcal{K}(x_i, x_j) = \langle f(x_i), f(x_j) \rangle$$
     <div class="caption">
-      The kernel $\mathcal{K}(x_i, x_j)$ computes the inner product (dot product) between the representations of $x_i$ and $x_j$. High values mean the model considers these inputs similar; low or negative values mean they're dissimilar.
+      The kernel $K(x_i, x_j)$ calculates the similarities between the different representations of the datapoints using inner product. This gives us a way to compare points without directly comparing high-dimensional vectors.
     </div>
   </div>
 
   <p>
-    For a dataset of $n$ points, we can organize all pairwise similarities into a <strong>kernel matrix</strong> (also called a Gram matrix) $K \in \mathbb{R}^{n \times n}$ where $K_{ij} = \mathcal{K}(x_i, x_j)$.
+    Then, given two models with different representations $f$ and $g$, we can calculate the similarity between the representations by designing a similarity metric between the two kernels $m: \mathcal{K} \times \mathcal{K} \rightarrow \mathbb{R}$. Common similarity metrics include the CKA and nearest neighbor metric, while in the original platonic representation work, the authors used CKNNA.
   </p>
 
-  <div class="analogy">
-    <strong>Intuition:</strong> The kernel matrix is like a social network graph where edge weights indicate how much two people (data points) have in common. Two models might organize their internal coordinate systems completely differently, but if their "social graphs" are similar—the same people cluster together—they've learned similar structure.
-  </div>
-
-  <h3>Comparing Kernel Matrices</h3>
+  <h3>Empirical Observations on Scale</h3>
 
   <p>
-    Now the problem becomes: given two kernel matrices $K$ (from representation $f$) and $L$ (from representation $g$), how do we measure their similarity? We need a metric $m: \mathcal{K} \times \mathcal{K} \rightarrow \mathbb{R}$.
-  </p>
-
-  <p>
-    This is subtle. Naively, if there exists a bijective (one-to-one) map between representations $X$ and $Y$, they encode the same information and should perform identically given an optimal decoder. Since invertible linear transformations preserve information, shouldn't a good kernel metric be invariant under any $T \in \text{GL}_n(\mathbb{R})$?
-  </p>
-
-  <p>
-    The problem: this would imply that <em>scale of directions doesn't matter</em>. But in representation learning, scale often encodes salience—how important a feature is. We want some invariances (rotations, overall scaling) but not others (relative scaling of different dimensions).
-  </p>
-
-  <h3>The Right Invariances</h3>
-
-  <p>
-    Instead of requiring invariance under all of $\text{GL}_n(\mathbb{R})$, we ask for invariance only under:
-  </p>
-
-  <ul>
-    <li><strong>Orthogonal transformations:</strong> Rotations and reflections shouldn't change similarity. If I rotate all my representation vectors by the same angle, distances between them are preserved.</li>
-    <li><strong>Isotropic scaling:</strong> Multiplying all representations by a constant shouldn't matter. This is like changing the units of measurement.</li>
-  </ul>
-
-  <p>
-    This leads us to <strong>Centered Kernel Alignment (CKA)</strong> as our primary metric, which we'll derive carefully in the next section.
-  </p>
-
-  <h3>Connecting to the Platonic Hypothesis</h3>
-
-  <p>
-    With this framework, the Platonic Representation Hypothesis gains mathematical precision:
+    Previous work showed that given sufficient amount of data, as we scale up two different models A and B, the representations are more aligned for the larger models compared to the smaller models. The authors provided the following hypotheses to explain for such observation:
   </p>
 
   <div class="hypothesis-box">
-    <div class="label">PRH Formalized</div>
+    <div class="label">Hypothesis 1: Convergence via Task Generality</div>
     <p>
-      As models A and B become sufficiently large and capable, their kernel matrices $K_A$ and $K_B$ (computed on the same data) become increasingly similar under appropriate metrics. The representations converge—not in their raw coordinates, but in their similarity structure.
+      As we increase the number of data points, the number of constraints put on the model increases if it performs well across the dataset. This restricts the possible hypothesis space to a small region. Think of it like solving a system of equations—more equations (data points) constrain the solution more tightly.
     </p>
   </div>
 
-  <p>
-    Empirical studies have confirmed this: given sufficient data, larger models show higher alignment than smaller ones. The question we pursue is: <em>how does this alignment develop during training?</em>
-  </p>
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 2: Convergence via Model Capacity</div>
+    <p>
+      As we increase the model capacity, the representation of the model increases so it has the capacity to find a more optimal solution. Larger models can explore a richer function space and are more likely to discover the "true" underlying structure.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 3: The Simplicity Bias</div>
+    <p>
+      Larger models tend to find simpler solutions to the problems. This connects to the phenomenon of Grokking, where models first memorize the dataset then, as training continues, tend toward simpler, more generalizable solutions.
+    </p>
+  </div>
+
+  <div class="insight">
+    It's plausible that the third hypothesis is related to Grokking, where the model first remembers the datasets then as the training epoch increases, the model tends to a simpler solution. This suggests some form of implicit regularization driving models toward more compressed representations.
+  </div>
 </section>

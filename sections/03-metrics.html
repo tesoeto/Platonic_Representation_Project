@@ -1,0 +1,86 @@
+<!-- SECTION: Similarity Metric Interpretation -->
+<section id="metrics">
+  <h2>Similarity Metric Interpretation</h2>
+
+  <p>
+    Naively, if there exists a bijective map between two representations X and Y, they should encode the same amount of information so it's expected that they should perform the same, given an optimal decoder. As it is the case that invertible linear transformations belong to this set, we should expect that a good kernel should be invariant under any transformation $T \in \text{GL}_n(\mathbb{R})$. However, as argued in the literature, this would imply that scale of directions doesn't matter.
+  </p>
+
+  <p>
+    Instead of requiring invariance under elements of $\text{GL}_n(\mathbb{R})$, only orthogonal transformation and scale invariance are required. One choice is the CKA metric:
+  </p>
+
+  <div class="math-block">
+    $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K) \cdot \text{HSIC}(L, L)}}$$
+    $$\text{HSIC}(K, L) = \frac{1}{(n-1)^2} \text{tr}(KHLH)$$
+    <div class="caption">
+      Where $H_n = I_n - \frac{1}{n}\mathbf{1}\mathbf{1}^T$ is the centering matrix, while K and L are different kernels. CKA normalizes HSIC to produce a similarity score between 0 and 1.
+    </div>
+  </div>
+
+  <h3>Understanding HSIC: The Core Building Block</h3>
+
+  <p>
+    The Hilbert-Schmidt Independence Criterion (HSIC) measures statistical dependence between two kernel matrices. The intuition is elegant: if two representations capture similar structure, then knowing the similarity between two points in one representation should tell us about their similarity in the other representation.
+  </p>
+
+  <p>
+    Recall that for regular correlation, we normalize covariance by standard deviations. CKA does the same for HSIC—$\text{HSIC}(K, K)$ measures the "self-dependence" of K, analogous to variance. The formula $\text{tr}(KHLH)/(n-1)^2$ computes: "On average, when two points have higher-than-expected similarity in representation K, do they also have higher-than-expected similarity in representation L?"
+  </p>
+
+  <h3>Why CKA Falls Short: The Global Domination Problem</h3>
+
+  <p>
+    However, results have shown that CKNNA is a better metric at capturing the alignment between the kernels. <strong>Intuitively, two vector representations that are far from each other should not affect each other too greatly.</strong> This is the key insight that motivates using local metrics.
+  </p>
+
+  <p>
+    CKA computes similarity over <em>all</em> pairs of points, which means it's dominated by global structure—particularly the largest principal components. Consider two representations that organize data into the same global clusters but differ in fine-grained local structure. CKA will report high similarity because the large-scale structure dominates the sum. But local structure often matters more for downstream tasks—knowing which specific points are most similar to a query is crucial for retrieval, few-shot learning, and more.
+  </p>
+
+  <h3>CKNNA: Focusing on Local Structure</h3>
+
+  <p>
+    Centered Kernel Nearest Neighbor Alignment (CKNNA) addresses CKA's limitations by restricting the comparison to local neighborhoods. The key idea is to only consider pairs of points that are mutual k-nearest neighbors.
+  </p>
+
+  <div class="definition">
+    <div class="term">Mutual k-Nearest Neighbors</div>
+    <p>
+      Points $i$ and $j$ are <strong>mutual k-nearest neighbors</strong> if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is among the $k$ closest points to $j$. This symmetric relationship captures robust local structure.
+    </p>
+  </div>
+
+  <p>
+    Let $M_k \in \{0, 1\}^{n \times n}$ be the mutual k-NN mask computed from the reference representation:
+  </p>
+
+  <div class="math-block">
+    $$(M_k)_{ij} = \begin{cases} 1 & \text{if } i \text{ and } j \text{ are mutual } k\text{-NN} \\ 0 & \text{otherwise} \end{cases}$$
+  </div>
+
+  <p>
+    CKNNA applies this mask to both kernel matrices before computing CKA:
+  </p>
+
+  <div class="math-block">
+    $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
+    <div class="caption">
+      Where $\odot$ denotes element-wise (Hadamard) product. Only pairs that are mutual k-NN in the reference representation contribute to the similarity measure.
+    </div>
+  </div>
+
+  <h3>Why CKNNA is Better: The Local Alignment Hypothesis</h3>
+
+  <p>
+    Our refined hypothesis helps to explain why CKNNA performs better than CKA: <strong>instead of aligning globally, the alignment should happen primarily locally.</strong> CKNNA extracts only the k-nearest neighbor points that are likely to belong to the same neighborhood, while ignoring vectors that are far apart from each other that share less similarities.
+  </p>
+
+  <p>
+    We could treat each neighborhood as a subspace and demand invariance under rotation and local scaling. Specifically, the vector space $\{x - \mu_i \mid x \in L_i\}$ should be equivalent to $\{\alpha T(x - \mu_i) \mid x \in L_i\}$ with $T$ being rotation and $\alpha$ being a scaling. This preserves the linear representation hypothesis at the local level while allowing global structure to vary.
+  </p>
+
+  <div class="insight">
+    By comparing CKA and CKNNA, we can distinguish between changes in global structure (CKA drops, CKNNA stable) and changes in local structure (both drop). This distinction proves crucial for understanding training dynamics.
+  </div>
+</section>

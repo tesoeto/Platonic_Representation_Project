@@ -3,17 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Evolution of Representation Space | Platonic Representations</title>
-
-  <!-- Google Fonts -->
+  <title>Evolution of Representation Space: Front And Back</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
-
-  <!-- MathJax -->
   <script>
     window.MathJax = {
       tex: {
@@ -23,29 +16,25 @@
     };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="progress-bar" id="progress"></div>
-
   <header>
     <div class="header-content">
-      <span class="category-tag">Deep Learning · Representation Learning · Training Dynamics</span>
-      <h1>Evolution of Representation Space: Front and Back</h1>
-      <p class="subtitle">
-        Investigating how neural network representations evolve during training, and what this tells us about the Platonic Representation Hypothesis
-      </p>
+      <span class="category-tag">Deep Learning • Representation Learning</span>
+      <h1>Evolution of Representation Space: Front And Back</h1>
+      <p class="subtitle">Investigating the Platonic Representation Hypothesis through training dynamics and representational alignment metrics</p>
       <div class="meta">
-        <span class="authors">Tony Wu & Baiyu Zhu</span> · Graduate Course Final Project · December 2024
+        <span class="authors">Tony Wu, Baiyu Zhu</span> · Graduate Course Final Project · December 2024
       </div>
     </div>
   </header>
-
   <nav>
     <div class="nav-content">
       <a href="#introduction" class="active">Introduction</a>
       <a href="#formulation">Formulation</a>
-      <a href="#methodology">Methodology</a>
-      <a href="#research-direction">Research Direction</a>
+      <a href="#metrics">Metrics</a>
       <a href="#experiments">Experiments</a>
       <a href="#results">Results</a>
       <a href="#refined-hypothesis">Refined Hypothesis</a>
@@ -53,566 +42,647 @@
       <a href="#references">References</a>
     </div>
   </nav>
-
   <main>
     <div class="toc">
       <h3>Contents</h3>
       <ol>
         <li><a href="#introduction">Introduction</a></li>
         <li><a href="#formulation">Platonic Representation Formulation</a></li>
-        <li><a href="#methodology">Methodology: Measuring Similarity</a></li>
-        <li><a href="#research-direction">Our Research Direction</a></li>
+        <li><a href="#metrics">Similarity Metric Interpretation</a></li>
         <li><a href="#experiments">Experiment Setup</a></li>
         <li><a href="#results">Experiment Results</a></li>
-        <li><a href="#refined-hypothesis">Refining the Hypothesis</a></li>
+        <li><a href="#refined-hypothesis">A Refined Hypothesis</a></li>
         <li><a href="#conclusion">Conclusion</a></li>
         <li><a href="#references">References</a></li>
       </ol>
     </div>
+    <!-- SECTION: Introduction -->
+<section id="introduction">
+  <h2>Introduction</h2>
+
+  <p>
+    As contrary to using different models to perform different tasks, modern Large Language Models (LLM) such as ChatGPT 4 use a single unified neural network backbone called the foundation model that's often based on Transformer architecture with shared weights to perform multiple tasks, such as image caption and text/image generation. Instead of having worse performance, when trained on a large corpus of data of multimodality, such as both images and texts all at once, models generally perform better compared to training on single modality. This suggests that there could be a unified representation of different modalities that describes the same object.
+  </p>
+
+  <p>
+    To explain such phenomenon, the <strong>Platonic Representation Hypothesis</strong> was introduced <span class="citation">[Huh et al., 2024]</span>. To build upon this work, in this paper, we present a refined platonic representation hypothesis, taking into account of the recent work that shows neurons which fire to similar concepts tend to form local clusters that resemble lobes of the brain <span class="citation">[Anthropic, 2024]</span>.
+  </p>
+
+  <div class="key-question">
+    <strong>Central Investigation</strong>
+    We run experiments to demonstrate the evolution of the alignment of the model over training epoch. We observe that the first few layers align quickly, while for the later layers we observe a phase of plateau followed by a sharp transition of alignment—a phenomenon reminiscent of Grokking.
+  </div>
+
+  <p>
+    The philosophical implications are profound. Just as Plato argued that our perceived reality consists of imperfect shadows of ideal "Forms," the Platonic Representation Hypothesis suggests that different models and modalities are approximating the same underlying reality from different vantage points. The authors hypothesized that there exists an idealized statistical model $P(z)$ that governs the events we observe in the universe, and the observations we make about objects are only partial information of the original object. Similar to the Cave allegory made by Plato, word descriptions and image descriptions are merely shadows of the original object.
+  </p>
+
+  <h3>The Linear Representation Hypothesis</h3>
+
+  <p>
+    It's widely accepted in the ML community that direction of the representation space embeds semantic meaning, and that we have an approximate linear relation of $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$. Mathematically, it's regarded that each feature is represented by a unit vector $d_i$ in the representation space, and the general vector can be written as $\sum_i a_i d_i$. This is known as the <strong>linear representation hypothesis</strong>. However, this relation only holds approximately.
+  </p>
+
+  <h3>Scales of Representation Space</h3>
+
+  <p>
+    To further understand the representation space, tools such as Sparse Auto-Encoder (SAE) were introduced, where we take the first k layers of the LLM and introduce an Auto-Encoder with the loss designed to make the features sparse. We denote $x$ to be the input to SAE, $f(x) = \text{Encoder}(x)$ to be the latent representation, and $\hat{x} = \text{Decoder}(f)$ to be the reconstructed vector. We freeze the first k layers and train the head by the following loss:
+  </p>
+
+  <div class="math-block">
+    $$\mathcal{L} = \mathbb{E}_{x \sim \mathcal{D}}\left[ ||x - \hat{x}||_2^2 + \lambda ||f||_1 \right]$$
+    <div class="caption">
+      The first term is the reconstruction loss ensuring the autoencoder preserves information. The second term enforces sparsity, encouraging the model to use only a few features at once.
+    </div>
+  </div>
+
+  <p>
+    Using SAE, it's been explored that there are <strong>three scales</strong> of the representation space: Atomic, Intermediate, and Galaxy scales. The atomic scale contains crystal structures with parallelogram or trapezoid faces that approximately satisfy the linear representation hypothesis. In the intermediate scale, it's observed that neurons that fire to similar concepts, such as coding and math, are clustered together—similar to lobes of the brain seen in fMRI images.
+  </p>
+
+  <div class="insight">
+    Nearby vectors in representation space are observed to have similar semantic meanings. This suggests a sense of <em>smoothness</em> of the embedding of datapoints for large enough models trained over many epochs. Given a point $x$ in the representation space and sufficiently small radius $\epsilon > 0$, all the points in the ball $B_\epsilon(x) \equiv \{y \mid |x - y| < \epsilon\}$ have similar semantic meanings.
+  </div>
+</section>
+
+
+<!-- SECTION: Platonic Representation Formulation -->
+<section id="formulation">
+  <h2>Platonic Representation Formulation</h2>
+
+  <p>
+    We provide an overview of previous established concepts in literatures. A vector representation of an input $x \in \mathcal{X}$ is defined to be a mapping from the data space $\mathcal{X}$ to the target space $\mathbb{R}^n$, provided by the formula:
+  </p>
+
+  <div class="math-block">
+    $$f: \mathcal{X} \rightarrow \mathbb{R}^n$$
+    <div class="caption">
+      The representation function maps each input from the data space to a point in n-dimensional Euclidean space. This is the fundamental object we study when comparing models.
+    </div>
+  </div>
+
+  <p>
+    To characterize the representation space, kernel $\mathcal{K}$ is introduced, which measures the similarity between the representations of the data points as:
+  </p>
+
+  <div class="math-block">
+    $$\mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}, \quad \mathcal{K}(x_i, x_j) = \langle f(x_i), f(x_j) \rangle$$
+    <div class="caption">
+      The kernel $K(x_i, x_j)$ calculates the similarities between the different representations of the datapoints using inner product. This gives us a way to compare points without directly comparing high-dimensional vectors.
+    </div>
+  </div>
+
+  <p>
+    Then, given two models with different representations $f$ and $g$, we can calculate the similarity between the representations by designing a similarity metric between the two kernels $m: \mathcal{K} \times \mathcal{K} \rightarrow \mathbb{R}$. Common similarity metrics include the CKA and nearest neighbor metric, while in the original platonic representation work, the authors used CKNNA.
+  </p>
+
+  <h3>Empirical Observations on Scale</h3>
+
+  <p>
+    Previous work showed that given sufficient amount of data, as we scale up two different models A and B, the representations are more aligned for the larger models compared to the smaller models. The authors provided the following hypotheses to explain for such observation:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 1: Convergence via Task Generality</div>
+    <p>
+      As we increase the number of data points, the number of constraints put on the model increases if it performs well across the dataset. This restricts the possible hypothesis space to a small region. Think of it like solving a system of equations—more equations (data points) constrain the solution more tightly.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 2: Convergence via Model Capacity</div>
+    <p>
+      As we increase the model capacity, the representation of the model increases so it has the capacity to find a more optimal solution. Larger models can explore a richer function space and are more likely to discover the "true" underlying structure.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 3: The Simplicity Bias</div>
+    <p>
+      Larger models tend to find simpler solutions to the problems. This connects to the phenomenon of Grokking, where models first memorize the dataset then, as training continues, tend toward simpler, more generalizable solutions.
+    </p>
+  </div>
+
+  <div class="insight">
+    It's plausible that the third hypothesis is related to Grokking, where the model first remembers the datasets then as the training epoch increases, the model tends to a simpler solution. This suggests some form of implicit regularization driving models toward more compressed representations.
+  </div>
+</section>
 
-    <!-- ==================== INTRODUCTION ==================== -->
-    <section id="introduction">
-      <h2>Introduction</h2>
 
-      <div class="key-question">
-        <strong>The Central Puzzle</strong>
-        Why do neural networks trained on completely different data—text, images, audio—end up learning strikingly similar internal representations?
-      </div>
-
-      <h3>From Many Models to One Foundation</h3>
+<!-- SECTION: Similarity Metric Interpretation -->
+<section id="metrics">
+  <h2>Similarity Metric Interpretation</h2>
 
-      <p>
-        The old paradigm of machine learning was straightforward: different tasks required different models. Image classification used CNNs, language modeling used RNNs, speech recognition had its own architectures. Each domain developed in isolation, with specialized inductive biases baked into the model design.
-      </p>
-
-      <p>
-        Modern Large Language Models like GPT-4 and Claude shatter this paradigm entirely. A single unified neural network backbone—the <strong>foundation model</strong>—built on the Transformer architecture with shared weights can perform image captioning, text generation, code synthesis, and much more.
-      </p>
+  <p>
+    Naively, if there exists a bijective map between two representations X and Y, they should encode the same amount of information so it's expected that they should perform the same, given an optimal decoder. As it is the case that invertible linear transformations belong to this set, we should expect that a good kernel should be invariant under any transformation $T \in \text{GL}_n(\mathbb{R})$. However, as argued in the literature, this would imply that scale of directions doesn't matter.
+  </p>
+
+  <p>
+    Instead of requiring invariance under elements of $\text{GL}_n(\mathbb{R})$, only orthogonal transformation and scale invariance are required. One choice is the CKA metric:
+  </p>
 
-      <p>
-        Here's what makes this deeply surprising: instead of suffering from the jack-of-all-trades problem, these multimodal models actually <em>perform better</em> than single-modality specialists when trained on large, diverse corpora. Training on both images and text doesn't dilute the model's language understanding—it enhances it.
-      </p>
+  <div class="math-block">
+    $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K) \cdot \text{HSIC}(L, L)}}$$
+    $$\text{HSIC}(K, L) = \frac{1}{(n-1)^2} \text{tr}(KHLH)$$
+    <div class="caption">
+      Where $H_n = I_n - \frac{1}{n}\mathbf{1}\mathbf{1}^T$ is the centering matrix, while K and L are different kernels. CKA normalizes HSIC to produce a similarity score between 0 and 1.
+    </div>
+  </div>
 
-      <div class="insight">
-        This observation points to something profound: there may exist a <strong>unified representation</strong> of different modalities that captures the same underlying objects and concepts. Images of cats and descriptions of cats might converge to similar internal codes.
-      </div>
+  <h3>Understanding HSIC: The Core Building Block</h3>
 
-      <h3>The Platonic Representation Hypothesis</h3>
+  <p>
+    The Hilbert-Schmidt Independence Criterion (HSIC) measures statistical dependence between two kernel matrices. The intuition is elegant: if two representations capture similar structure, then knowing the similarity between two points in one representation should tell us about their similarity in the other representation.
+  </p>
+
+  <p>
+    Recall that for regular correlation, we normalize covariance by standard deviations. CKA does the same for HSIC—$\text{HSIC}(K, K)$ measures the "self-dependence" of K, analogous to variance. The formula $\text{tr}(KHLH)/(n-1)^2$ computes: "On average, when two points have higher-than-expected similarity in representation K, do they also have higher-than-expected similarity in representation L?"
+  </p>
 
-      <p>
-        To explain this phenomenon, Huh et al. introduced the <strong>Platonic Representation Hypothesis (PRH)</strong>. The philosophical reference is deliberate and illuminating.
-      </p>
+  <h3>Why CKA Falls Short: The Global Domination Problem</h3>
 
-      <div class="analogy">
-        <strong>Plato's Cave Allegory:</strong> Prisoners in a cave see only shadows on a wall, cast by objects passing before a fire. The shadows are imperfect projections of true Forms that exist in an idealized realm. Similarly, word descriptions and image pixels are merely <em>shadows</em> of the true objects they represent—partial, noisy observations of an underlying reality.
-      </div>
-
-      <p>
-        The PRH formalizes this intuition: there exists an idealized statistical model $P(z)$ that governs events in our universe. Every observation we make—whether through language, vision, or any other modality—provides only partial information about these latent objects $z$. A sufficiently capable model, trained to predict these observations accurately, must discover structure in the underlying $z$ itself.
-      </p>
-
-      <h3>Why Does Convergence Happen?</h3>
-
-      <p>
-        The original PRH paper proposed three complementary mechanisms driving representation convergence:
-      </p>
-
-      <div class="hypothesis-box">
-        <div class="label">Hypothesis 1: Convergence via Task Generality</div>
-        <p>
-          As we increase the number of data points and tasks, the constraints on the model multiply. To perform well across a massive, diverse dataset, the model's hypothesis space shrinks dramatically.
-        </p>
-      </div>
+  <p>
+    However, results have shown that CKNNA is a better metric at capturing the alignment between the kernels. <strong>Intuitively, two vector representations that are far from each other should not affect each other too greatly.</strong> This is the key insight that motivates using local metrics.
+  </p>
 
-      <div class="hypothesis-box">
-        <div class="label">Hypothesis 2: Convergence via Model Capacity</div>
-        <p>
-          Larger models have the capacity to discover more optimal solutions. A small model might settle for a hacky shortcut. A large model can find the elegant, generalizable solution that aligns with reality itself.
-        </p>
-      </div>
-
-      <div class="hypothesis-box">
-        <div class="label">Hypothesis 3: The Simplicity Bias</div>
-        <p>
-          Larger models tend to find <em>simpler</em> solutions, even though they have capacity for more complex ones. Perhaps the optimization landscape of larger models favors smooth, compressible representations.
-        </p>
-      </div>
+  <p>
+    CKA computes similarity over <em>all</em> pairs of points, which means it's dominated by global structure—particularly the largest principal components. Consider two representations that organize data into the same global clusters but differ in fine-grained local structure. CKA will report high similarity because the large-scale structure dominates the sum. But local structure often matters more for downstream tasks—knowing which specific points are most similar to a query is crucial for retrieval, few-shot learning, and more.
+  </p>
+
+  <h3>CKNNA: Focusing on Local Structure</h3>
+
+  <p>
+    Centered Kernel Nearest Neighbor Alignment (CKNNA) addresses CKA's limitations by restricting the comparison to local neighborhoods. The key idea is to only consider pairs of points that are mutual k-nearest neighbors.
+  </p>
+
+  <div class="definition">
+    <div class="term">Mutual k-Nearest Neighbors</div>
+    <p>
+      Points $i$ and $j$ are <strong>mutual k-nearest neighbors</strong> if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is among the $k$ closest points to $j$. This symmetric relationship captures robust local structure.
+    </p>
+  </div>
+
+  <p>
+    Let $M_k \in \{0, 1\}^{n \times n}$ be the mutual k-NN mask computed from the reference representation:
+  </p>
+
+  <div class="math-block">
+    $$(M_k)_{ij} = \begin{cases} 1 & \text{if } i \text{ and } j \text{ are mutual } k\text{-NN} \\ 0 & \text{otherwise} \end{cases}$$
+  </div>
+
+  <p>
+    CKNNA applies this mask to both kernel matrices before computing CKA:
+  </p>
+
+  <div class="math-block">
+    $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
+    <div class="caption">
+      Where $\odot$ denotes element-wise (Hadamard) product. Only pairs that are mutual k-NN in the reference representation contribute to the similarity measure.
+    </div>
+  </div>
 
-      <h3>Connecting to the Structure of Representations</h3>
-
-      <p>
-        The ML community has long accepted that <strong>directions in representation space encode semantic meaning</strong>. The famous example: $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$ suggests that gender is encoded as a consistent direction.
-      </p>
+  <h3>Why CKNNA is Better: The Local Alignment Hypothesis</h3>
+
+  <p>
+    Our refined hypothesis helps to explain why CKNNA performs better than CKA: <strong>instead of aligning globally, the alignment should happen primarily locally.</strong> CKNNA extracts only the k-nearest neighbor points that are likely to belong to the same neighborhood, while ignoring vectors that are far apart from each other that share less similarities.
+  </p>
+
+  <p>
+    We could treat each neighborhood as a subspace and demand invariance under rotation and local scaling. Specifically, the vector space $\{x - \mu_i \mid x \in L_i\}$ should be equivalent to $\{\alpha T(x - \mu_i) \mid x \in L_i\}$ with $T$ being rotation and $\alpha$ being a scaling. This preserves the linear representation hypothesis at the local level while allowing global structure to vary.
+  </p>
+
+  <div class="insight">
+    By comparing CKA and CKNNA, we can distinguish between changes in global structure (CKA drops, CKNNA stable) and changes in local structure (both drop). This distinction proves crucial for understanding training dynamics.
+  </div>
+</section>
+
+
+<!-- SECTION: Experiment Setup -->
+<section id="experiments">
+  <h2>Experiment Setup</h2>
+
+  <h3>Model: Pythia</h3>
+
+  <p>
+    We use the <strong>Pythia</strong> suite of language models <span class="citation">[Biderman et al., 2023]</span>, which provides a unique resource for studying training dynamics. Unlike most released models, Pythia includes checkpoints saved throughout training, allowing us to analyze how representations evolve over time.
+  </p>
+
+  <p>
+    Key properties of Pythia that make it ideal for our study:
+  </p>
+
+  <ul>
+    <li><strong>Multiple scales:</strong> Models range from 70M to 12B parameters, enabling us to test how scale affects representation convergence.</li>
+    <li><strong>Consistent training:</strong> All models trained on the same data (The Pile) with the same hyperparameters (relative to scale), isolating the effect of model size.</li>
+    <li><strong>Dense checkpoints:</strong> Checkpoints available at steps 0, 1, 2, 4, 8, 16, ..., 143,000, providing fine-grained visibility into training dynamics.</li>
+  </ul>
+
+  <h3>Dataset: WikiText-2</h3>
+
+  <p>
+    For our experiments, we use text samples from the <strong>WikiText-2-raw-v1</strong> dataset. This dataset provides high-quality Wikipedia articles that serve as a good test bed for analyzing language model representations. The text is relatively clean and covers diverse topics, making it suitable for probing general language understanding.
+  </p>
+
+  <h3>Experimental Protocol</h3>
+
+  <p>
+    Our experiments follow a consistent protocol designed to isolate the effect of training progress on representation alignment:
+  </p>
+
+  <ol>
+    <li><strong>Select checkpoints:</strong> We compare representations at checkpoint $t$ against the final checkpoint to measure convergence toward the "mature" representation.</li>
+    <li><strong>Extract representations:</strong> For a fixed set of input examples, we extract the hidden states at specific layers. We obtain representations by mean-pooling across sequence positions.</li>
+    <li><strong>Compute kernel matrices:</strong> Using linear kernel, compute pairwise similarity matrices $K_t$ and $K_{\text{final}}$.</li>
+    <li><strong>Compute alignment:</strong> Calculate both CKA and CKNNA between $K_t$ and $K_{\text{final}}$.</li>
+  </ol>
+
+  <h3>Experiment Configurations</h3>
+
+  <p>
+    We run two main types of experiments:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Experiment 1: Training Dynamics</div>
+    <p>
+      We track how representation alignment evolves across training checkpoints for a single model. Using <strong>150 samples</strong> from WikiText-2 with <strong>k=16</strong> for CKNNA, we measure alignment at checkpoints from step 4,000 to step 128,000 against the final trained model.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Experiment 2: Model Scale</div>
+    <p>
+      We compare representations across Pythia models of different sizes (70M, 160M, 410M, 1B, 1.4B, 2.8B) at their final checkpoints. Using <strong>400 samples</strong> with <strong>k=100</strong> for CKNNA, we measure pairwise alignment to test whether larger models converge to more similar representations.
+    </p>
+  </div>
+
+  <h3>Why These Choices?</h3>
+
+  <p>
+    The parameter choices balance statistical stability with computational feasibility:
+  </p>
+
+  <ul>
+    <li><strong>k=16 for dynamics:</strong> With 150 samples, k=16 means each point's neighborhood contains about 10% of the data—large enough to be statistically meaningful but small enough to reflect genuinely local structure.</li>
+    <li><strong>k=100 for scale:</strong> With 400 samples, k=100 provides richer neighborhood information while still focusing on local relationships.</li>
+    <li><strong>Final checkpoint as reference:</strong> We measure alignment relative to the final trained model, treating it as the "converged" representation against which we measure progress.</li>
+  </ul>
+
+  <div class="insight">
+    Computing the mutual k-NN mask from the final checkpoint ensures we're asking a consistent question: "How well does this intermediate representation capture the neighborhood structure that the model eventually learns?"
+  </div>
+</section>
+
+
+<!-- SECTION: Experiment Results -->
+<section id="results">
+  <h2>Experiment Results</h2>
+
+  <h3>Training Dynamics: The Surprising Non-Monotonicity of CKA</h3>
+
+  <p>
+    Our first experiment tracks how representation alignment evolves throughout training. We compare each checkpoint's representation against the final trained model, asking: "How close is this intermediate representation to what the model eventually learns?"
+  </p>
+
+  <figure class="figure-wide">
+    <img src="assets/images/Unknown-14.png" alt="Representation convergence analysis showing CKA and CKNNA metrics over training steps">
+    <figcaption>
+      <strong>Figure 1: Training Dynamics at the Last Layer.</strong>
+      Both CKA (blue) and CKNNA (orange, k=16) are plotted against training step count. The striking finding: CKNNA starts high (~0.995) and remains remarkably stable throughout training, while CKA shows dramatic non-monotonic behavior—rising initially, dropping sharply around step 20,000-40,000, then recovering. This dissociation reveals that <em>global</em> structure undergoes significant reorganization while <em>local</em> neighborhood structure remains preserved.
+    </figcaption>
+  </figure>
+
+  <h4>What Does This Divergence Mean?</h4>
+
+  <p>
+    The dramatic difference between CKA and CKNNA reveals something profound about how neural networks learn. Around step 20,000-40,000, the model undergoes what we call a <strong>global reorganization phase</strong>:
+  </p>
+
+  <ul>
+    <li><strong>Local structure is preserved:</strong> CKNNA remains above 0.995 throughout training. The model consistently identifies which data points are similar to each other—the "who is near whom" question has a stable answer even as the overall geometry shifts.</li>
+    <li><strong>Global structure is reorganized:</strong> CKA drops to ~0.982, indicating the overall shape of the representation manifold is being restructured. Distant points are changing their relationships even as nearby points maintain theirs.</li>
+    <li><strong>Eventual convergence:</strong> Both metrics converge toward 1.0 by the end of training, confirming that the final representation achieves both local and global stability.</li>
+  </ul>
+
+  <div class="insight">
+    Think of it like rearranging furniture in a house: the rooms (local neighborhoods) keep their internal arrangement, but the house itself (global structure) is being remodeled. Points that were close stay close, but the overall geometry—the "floor plan"—transforms.
+  </div>
+
+  <h3>Deep Dive: Kernel Matrix Analysis</h3>
+
+  <p>
+    To understand what drives the CKA drop, we examine the kernel matrices at two key checkpoints: early training (step 256) and mid-training (step 4000).
+  </p>
+
+  <figure class="figure-wide">
+    <img src="assets/images/Unknown-11.png" alt="Detailed kernel analysis at checkpoint 256">
+    <figcaption>
+      <strong>Figure 2: Kernel Analysis at Checkpoint 256 (Early Training).</strong>
+      <strong>Top row:</strong> Kernel matrices K (checkpoint 256), L (final checkpoint), and mutual kNN mask (k=16). The checkered pattern in K and L reveals cluster structure in the data.
+      <strong>Bottom row:</strong> Scatter plots showing local pairs correlation (r=0.995) versus global pairs correlation (r=0.965), plus the absolute difference |K-L|. The 3% gap between local and global correlation is the signature of global reorganization—nearby points agree strongly, but distant points show more divergence.
+    </figcaption>
+  </figure>
+
+  <p>
+    The kernel matrices reveal a clear structure: both K and L show similar "checkered" patterns indicating cluster organization in the data. The bright spots along the diagonal and at certain off-diagonal positions correspond to groups of semantically similar text passages. What's remarkable is how similar these structures are even at step 256—the model has already learned which points belong together.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="assets/images/Unknown-12.png" alt="Detailed kernel analysis at checkpoint 4000">
+    <figcaption>
+      <strong>Figure 3: Kernel Analysis at Checkpoint 4000 (Mid-Training).</strong>
+      Same analysis as Figure 2 but at step 4000. The global pairs correlation has improved to 0.980 (up from 0.965), while local pairs remain at 0.994. The |K-L| difference map shows similar structure to checkpoint 256, but with generally smaller magnitudes. The model is converging toward the final representation, with global structure catching up to local structure.
+    </figcaption>
+  </figure>
+
+  <h4>The Local-Global Gap</h4>
+
+  <p>
+    The scatter plots in Figures 2 and 3 reveal the key insight: <strong>local pairs (mutual k-NN) show tighter correlation than global pairs (all pairs)</strong>. At checkpoint 256:
+  </p>
+
+  <ul>
+    <li>Local pairs correlation: <strong>r = 0.995</strong></li>
+    <li>Global pairs correlation: <strong>r = 0.965</strong></li>
+  </ul>
+
+  <p>
+    This 3% gap explains exactly why CKNNA stays high while CKA dips. CKNNA only "sees" the local pairs where agreement is near-perfect. CKA sees all pairs, including the global ones that are still being reorganized.
+  </p>
+
+  <h3>Layer-Specific Analysis: Middle vs. Final Layers</h3>
+
+  <p>
+    The Platonic Representation Hypothesis suggests that later layers should show different convergence dynamics, as they contain more abstract, task-relevant representations. We test this by analyzing convergence at layer 12 (middle of the network).
+  </p>
+
+  <figure class="figure-wide">
+    <img src="assets/images/Unknown-13.png" alt="Representation convergence at layer 12">
+    <figcaption>
+      <strong>Figure 4: Convergence Analysis at Layer 12 (Middle Layer).</strong>
+      The same CKA/CKNNA analysis at a middle layer shows qualitatively different dynamics. Most notably: <strong>no reorganization dip</strong>. Both metrics start high and converge smoothly toward 1.0. The representation restructuring we observed in the final layer doesn't appear here.
+    </figcaption>
+  </figure>
+
+  <h4>Why Do Layers Behave Differently?</h4>
+
+  <p>
+    The contrast between layer 12 and the final layer tells us something important about how information flows through the network:
+  </p>
+
+  <ul>
+    <li><strong>Middle layers stabilize earlier:</strong> Layer 12 shows smooth convergence without the dramatic reorganization phase. The representations here reach their final form more directly.</li>
+    <li><strong>Final layers are more dynamic:</strong> The last layer undergoes more substantial restructuring during training. This makes sense—later layers are responsible for task-specific processing and must adapt more dramatically to capture the full complexity of the training objective.</li>
+    <li><strong>Early convergence of local structure:</strong> In both layers, CKNNA is consistently above CKA, confirming that local structure converges before global structure regardless of layer depth.</li>
+  </ul>
+
+  <div class="insight">
+    This layer-wise analysis suggests a <em>hierarchical</em> convergence process: earlier layers establish stable, reusable features early in training, while later layers continue to reorganize how these features are combined for the final task.
+  </div>
+
+  <h3>Model Scale: Larger Models, More Aligned Representations</h3>
+
+  <p>
+    Our second experiment tests the core prediction of the Platonic Representation Hypothesis: that larger models should converge to more similar representations.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="assets/images/Unknown-10.png" alt="Representation alignment for models of different sizes">
+    <figcaption>
+      <strong>Figure 5: Representation Alignment Across Model Scales.</strong>
+      We compare final-checkpoint representations across Pythia models of different sizes, plotting representation alignment (y-axis) against log model size (x-axis). Using 400 samples with k=100 for CKNNA. Both CKA and CKNNA show a clear trend: <strong>larger models produce more aligned representations</strong>. CKNNA (k=16 and k=100) consistently exceeds CKA, confirming that local structure is more aligned than global structure even across model scales.
+    </figcaption>
+  </figure>
+
+  <h4>Key Observations on Scale</h4>
+
+  <ul>
+    <li><strong>Monotonic improvement with scale:</strong> Both CKA and CKNNA increase as model size grows. The 2.8B parameter model shows near-perfect alignment (>0.999) while the 70M model shows lower alignment (~0.983 for CKA).</li>
+    <li><strong>CKNNA consistently higher:</strong> Across all model sizes, CKNNA exceeds CKA by 1-2%. This confirms that local neighborhoods are better aligned than global structure, even when comparing fully-trained models.</li>
+    <li><strong>Diminishing returns at scale:</strong> The gap between consecutive model sizes shrinks as we move to larger models. The jump from 70M to 160M is substantial; the jump from 1.4B to 2.8B is smaller.</li>
+  </ul>
+
+  <div class="insight">
+    The scale results support the Platonic Representation Hypothesis: as models become more capable, they converge toward similar representations. The local-before-global pattern we observed in training dynamics also appears in the scale comparison—local structure is more universal than global structure.
+  </div>
+
+  <h3>Connecting to Grokking</h3>
+
+  <p>
+    The non-monotonic behavior of CKA during training is reminiscent of <strong>grokking</strong>—the phenomenon where models suddenly generalize long after achieving perfect training accuracy. The pattern we observe suggests:
+  </p>
+
+  <ol>
+    <li><strong>Initial learning phase (steps 0-15k):</strong> Rapid improvement in both local and global alignment. The model is learning basic structure.</li>
+    <li><strong>Reorganization phase (steps 20k-50k):</strong> Global structure is reorganized while local structure is preserved. This may correspond to a transition from memorization to generalization—the model keeps its learned associations but reorganizes how they fit together.</li>
+    <li><strong>Convergence phase (steps 50k+):</strong> Both metrics converge toward 1.0 as the representation stabilizes into its final form.</li>
+  </ol>
+
+  <div class="insight">
+    The preservation of local structure during global reorganization suggests that the model maintains useful learned features while restructuring how they relate to each other. This is exactly what we'd expect during a transition from memorization to generalization: the "facts" (local relationships) stay the same, but the "theory" (global organization) changes.
+  </div>
+</section>
+
+
+<!-- SECTION: Refined Hypothesis -->
+<section id="refined-hypothesis">
+  <h2>A Refined Hypothesis</h2>
+
+  <p>
+    We refine the platonic hypothesis to account for the recent discoveries made by Anthropic and others, while also trying to reconcile with the finding that a well-performing neural network may resemble that of a human brain. We also try to incorporate the hypothesis to explain why CKNNA performs better.
+  </p>
+
+  <h3>The Lobe Structure of Representation Space</h3>
+
+  <p>
+    We develop some intuitions by considering a toy model: Let's consider grouping of locally similar neighbors $L_i$ that have similar representations together and represent each neighbor with a node. In other words, we group feature vectors that have similar meaning as a single point. We could group the representation vectors in the same spirit as K-means or the EM algorithm.
+  </p>
+
+  <p>
+    But to make sure that we can compare two different models, we need to pick the initial points carefully. One way we can do this is: for each task $x_i$, we identify which neuron fires the most and pick such vector as the starting point, and we do this for each datapoint in $\{x_i\}$. We also connect the different nodes using edges $e \in E$, with the interpretation that the edges are used to interchange information with each other when solving tasks.
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Central Hypothesis: Local Alignment</div>
+    <p>
+      Instead of aligning globally, the alignment should happen primarily <strong>locally</strong>. We could treat each neighborhood as a subspace and demand invariance under rotation and local scaling.
+    </p>
+  </div>
+
+  <h3>Mathematical Formulation</h3>
+
+  <p>
+    We identify the mean of the lobe $\mu_x$ and demand that the representation be invariant under rotation and scaling <em>relative to the mean within the cluster</em>. Specifically, the vector space $\{x - \mu_i \mid x \in L_i\}$ should be equivalent to $\{\alpha T(x - \mu_i) \mid x \in L_i\}$ with $T$ being a rotation and $\alpha$ being a scaling factor.
+  </p>
+
+  <p>
+    To preserve the linear representation hypothesis roughly, we modify the classic analogy equation as:
+  </p>
+
+  <div class="math-block">
+    $$L(\text{King}) - L(\text{Queen}) \approx L(\text{Man}) - L(\text{Woman})$$
+    <div class="caption">
+      Where $L(\cdot)$ denotes the cluster centroid of the input. This makes sense as long as the lobe is small enough to align with the linear representation hypothesis locally.
+    </div>
+  </div>
+
+  <h3>Why This Explains CKNNA's Superiority</h3>
+
+  <p>
+    Our hypothesis helps to explain why CKNNA performs better than CKA: <strong>CKNNA extracts only the k-nearest neighbor points that are likely to belong to the same neighborhood, while ignoring vectors that are far apart from each other that share less similarities.</strong>
+  </p>
+
+  <p>
+    The key insight is that different models may organize their global geometry differently—one model might have elongated clusters, another might have spherical ones—but within each cluster, the relative positions of points are more constrained by the task. CKA sees the global differences and reports lower alignment. CKNNA sees only the local agreement and reports higher alignment.
+  </p>
+
+  <div class="insight">
+    This also connects to neuroscience: the brain organizes knowledge into localized "lobes" that specialize in different functions. If neural networks are converging toward some universal representation, it makes sense that this convergence would manifest locally—at the level of specialized "neighborhoods"—before appearing globally.
+  </div>
+
+  <h3>Implications for the Platonic Representation Hypothesis</h3>
+
+  <p>
+    Our refined hypothesis suggests a more nuanced version of the PRH:
+  </p>
+
+  <ul>
+    <li><strong>Local convergence is primary:</strong> The "Platonic ideal" that models converge toward may be better understood as a <em>local</em> property—agreement on similarity structure within neighborhoods—rather than a global geometric constraint.</li>
+    <li><strong>Global structure is under-determined:</strong> The data may not uniquely specify how neighborhoods should be arranged relative to each other. This explains why different models can achieve similar performance with different global geometries.</li>
+    <li><strong>Scale enables global alignment:</strong> Larger models may achieve better global alignment simply because they have the capacity to discover a more "canonical" arrangement of the locally-aligned neighborhoods.</li>
+  </ul>
+
+  <p>
+    Unfortunately, due to time and resource constraints, we are not able to develop rigorous tests of this hypothesis, but we encourage readers to expand on this idea.
+  </p>
+</section>
+
+
+<!-- SECTION: Conclusion -->
+<section id="conclusion">
+  <h2>Conclusion</h2>
+
+  <h3>Key Findings</h3>
+
+  <p>
+    Our experiments reveal several important insights about representational dynamics during neural network training:
+  </p>
+
+  <ol>
+    <li>
+      <strong>Local before global:</strong> Models establish local similarity structure early in training, while global geometry continues to evolve. CKNNA consistently exceeds CKA throughout training, confirming that local neighborhoods align before—and more completely than—global structure.
+    </li>
+    <li>
+      <strong>Non-monotonic convergence:</strong> Representation alignment is not monotonic. At the final layer, we observe a distinct reorganization phase (around steps 20k-50k) where global structure changes significantly while local structure is preserved. This suggests the model undergoes a "restructuring" phase during training.
+    </li>
+    <li>
+      <strong>Layer-specific dynamics:</strong> Middle layers (layer 12) converge smoothly without the dramatic reorganization seen in final layers. This suggests a hierarchical learning process where earlier layers stabilize first.
+    </li>
+    <li>
+      <strong>Scale enhances alignment:</strong> Larger models produce more aligned representations, supporting the core claim of the Platonic Representation Hypothesis. The local-before-global pattern persists across scales.
+    </li>
+  </ol>
+
+  <h3>Novel Contributions</h3>
+
+  <ul>
+    <li>
+      <strong>Training dynamics perspective:</strong> We apply representation analysis to study <em>learning dynamics</em>, not just compare trained models. This reveals structure in how representations evolve that static comparisons miss.
+    </li>
+    <li>
+      <strong>Connection to grokking:</strong> The non-monotonic alignment pattern—particularly the preservation of local structure during global reorganization—suggests a connection between representation dynamics and generalization transitions. This opens new avenues for understanding grokking through the lens of representational geometry.
+    </li>
+    <li>
+      <strong>Refined local alignment hypothesis:</strong> Our theoretical framework suggests that convergent representations should be understood primarily as <em>local</em> phenomena, with global alignment emerging as a secondary effect of scale and capacity.
+    </li>
+  </ul>
+
+  <h3>Future Directions</h3>
+
+  <ul>
+    <li>
+      <strong>Systematic scale study:</strong> Compare representation convergence across all Pythia sizes with finer checkpoint granularity to quantify how model capacity affects both the rate and final degree of alignment.
+    </li>
+    <li>
+      <strong>Explicit grokking experiments:</strong> Run experiments on algorithmic tasks (modular arithmetic, group operations) where grokking is known to occur, tracking CKA/CKNNA to see if representation metrics can predict the grokking transition.
+    </li>
+    <li>
+      <strong>Cross-modal analysis:</strong> Test whether vision and language models show similar local-before-global convergence patterns, and whether their representations become more aligned at larger scales.
+    </li>
+    <li>
+      <strong>Theoretical analysis:</strong> Develop a formal understanding of why local structure is preserved during global reorganization—what loss landscape properties or optimization dynamics produce this pattern?
+    </li>
+  </ul>
+
+  <div class="insight">
+    We also provide a short speculation of the reason behind different performances of the kernels. At the end, we provide a speculation of the hypothesis that requires further works to be done. We hope this work inspires further investigation into the dynamics of representation learning and the nature of convergent representations in neural networks.
+  </div>
+</section>
+
+
+<!-- SECTION: References -->
+<section id="references">
+  <h2>References</h2>
+
+  <ol class="references-list">
+    <li>
+      <span class="ref-authors">Huh, M., Cheung, B., Wang, T., & Isola, P.</span> (2024).
+      <span class="ref-title">The Platonic Representation Hypothesis.</span>
+      <span class="ref-venue">ICML 2024.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Biderman, S., Schoelkopf, H., Anthony, Q., et al.</span> (2023).
+      <span class="ref-title">Pythia: A Suite for Analyzing Large Language Models Across Training and Scaling.</span>
+      <span class="ref-venue">ICML 2023.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Kornblith, S., Norouzi, M., Lee, H., & Hinton, G.</span> (2019).
+      <span class="ref-title">Similarity of Neural Network Representations Revisited.</span>
+      <span class="ref-venue">ICML 2019.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Power, A., Burda, Y., Edwards, H., Babuschkin, I., & Misra, V.</span> (2022).
+      <span class="ref-title">Grokking: Generalization Beyond Overfitting on Small Algorithmic Datasets.</span>
+      <span class="ref-venue">ICLR 2022.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Gretton, A., Bousquet, O., Smola, A., & Schölkopf, B.</span> (2005).
+      <span class="ref-title">Measuring Statistical Dependence with Hilbert-Schmidt Norms.</span>
+      <span class="ref-venue">Algorithmic Learning Theory.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Anthropic.</span> (2024).
+      <span class="ref-title">Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet.</span>
+      <span class="ref-venue">Anthropic Research.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Templeton, A., et al.</span> (2024).
+      <span class="ref-title">Scaling and Evaluating Sparse Autoencoders.</span>
+      <span class="ref-venue">Anthropic Research.</span>
+    </li>
+    <li>
+      <span class="ref-authors">Mikolov, T., Sutskever, I., Chen, K., Corrado, G., & Dean, J.</span> (2013).
+      <span class="ref-title">Distributed Representations of Words and Phrases and their Compositionality.</span>
+      <span class="ref-venue">NeurIPS 2013.</span>
+    </li>
+  </ol>
+</section>
 
-      <p>
-        Recent work from Anthropic using <strong>Sparse Autoencoders (SAEs)</strong> reveals a richer picture. The representation space has structure at multiple scales:
-      </p>
-
-      <ul>
-        <li><strong>Atomic scale:</strong> Local crystal-like structures with parallelogram faces.</li>
-        <li><strong>Intermediate scale:</strong> Neurons that fire to similar concepts cluster together in lobes, reminiscent of brain structure.</li>
-        <li><strong>Galaxy scale:</strong> Global organization of these clusters into larger patterns.</li>
-      </ul>
-
-      <h3>Our Contribution: The Dynamics of Convergence</h3>
-
-      <p>
-        Prior work on the PRH has focused on comparing <em>final trained models</em>. But this leaves out a crucial dimension: <strong>how</strong> do representations evolve during training to reach convergence?
-      </p>
-
-      <p>
-        In this work, we investigate the <em>dynamics</em> of representation convergence. We ask: At what point during training does alignment happen? Are there distinct phases—perhaps resembling <em>grokking</em>? Do different layers converge at different rates?
-      </p>
-    </section>
-
-    <!-- ==================== FORMULATION ==================== -->
-    <section id="formulation">
-      <h2>Platonic Representation Formulation</h2>
-
-      <p>
-        Before we can measure whether representations are converging, we need precise mathematical language for what a "representation" even is, and how to compare two of them.
-      </p>
-
-      <h3>What Is a Representation?</h3>
-
-      <p>
-        A neural network transforms raw inputs into internal codes. Formally, a <strong>vector representation</strong> of an input $x \in \mathcal{X}$ is a mapping from the data space to a target vector space:
-      </p>
-
-      <div class="math-block">
-        $$f: \mathcal{X} \rightarrow \mathbb{R}^n$$
-        <div class="caption">
-          The function $f$ takes any input and produces an $n$-dimensional vector—the model's internal "understanding" of that input.
-        </div>
-      </div>
-
-      <h3>The Problem: How to Compare Different Spaces?</h3>
-
-      <p>
-        Here's the fundamental challenge: if model A produces 768-dimensional representations and model B produces 1024-dimensional representations, we can't directly compare their vectors. Even with the same dimension, the axes might mean completely different things.
-      </p>
-
-      <div class="insight">
-        The key insight: we don't care about the <em>absolute</em> representation of any single point. We care about <strong>relationships between points</strong>. If two models agree that "cat" is similar to "dog" but distant from "democracy," they've captured something in common.
-      </div>
-
-      <h3>Kernels: Measuring Similarity Structure</h3>
-
-      <p>
-        A <strong>kernel function</strong> measures similarity between representations:
-      </p>
-
-      <div class="math-block">
-        $$\mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}, \quad \mathcal{K}(x_i, x_j) = \langle f(x_i), f(x_j) \rangle$$
-        <div class="caption">
-          The kernel $\mathcal{K}(x_i, x_j)$ computes the inner product between representations. High values mean the model considers these inputs similar.
-        </div>
-      </div>
-
-      <p>
-        For a dataset of $n$ points, we organize all pairwise similarities into a <strong>kernel matrix</strong> $K \in \mathbb{R}^{n \times n}$ where $K_{ij} = \mathcal{K}(x_i, x_j)$.
-      </p>
-
-      <div class="analogy">
-        <strong>Intuition:</strong> The kernel matrix is like a social network where edge weights indicate how much two people have in common. Two models might organize their coordinates differently, but if their "social graphs" are similar, they've learned similar structure.
-      </div>
-
-      <h3>The Right Invariances</h3>
-
-      <p>
-        A good similarity metric should be invariant under:
-      </p>
-
-      <ul>
-        <li><strong>Orthogonal transformations:</strong> Rotations and reflections shouldn't change similarity.</li>
-        <li><strong>Isotropic scaling:</strong> Multiplying all representations by a constant shouldn't matter.</li>
-      </ul>
-
-      <p>
-        This leads us to <strong>Centered Kernel Alignment (CKA)</strong> as our primary metric.
-      </p>
-    </section>
-
-    <!-- ==================== METHODOLOGY ==================== -->
-    <section id="methodology">
-      <h2>Methodology: Measuring Representational Similarity</h2>
-
-      <p>
-        How do we quantify whether two representations capture "the same information"? This section develops the mathematical machinery.
-      </p>
-
-      <h3>HSIC: The Hilbert-Schmidt Independence Criterion</h3>
-
-      <p>
-        Classical correlation only captures <em>linear</em> relationships. HSIC captures <em>all</em> forms of dependence by embedding distributions into a Hilbert space.
-      </p>
-
-      <div class="hypothesis-box">
-        <div class="label">Theorem (Gretton et al., 2005)</div>
-        <p>
-          For characteristic kernels, $\text{HSIC}(X, Y) = 0$ if and only if $X$ and $Y$ are statistically independent.
-        </p>
-      </div>
-
-      <p>
-        HSIC measures the covariance between kernel evaluations:
-      </p>
-
-      <div class="math-block">
-        $$\text{HSIC}(X, Y) = \text{Cov}_{(x,y), (x',y')}\big[k(x, x'), l(y, y')\big]$$
-        <div class="caption">
-          <strong>Interpretation:</strong> If $X$ and $Y$ are dependent, similar $x$-values should co-occur with similar $y$-values.
-        </div>
-      </div>
-
-      <h4>The Empirical Estimator</h4>
-
-      <div class="math-block">
-        $$\widehat{\text{HSIC}}(K, L) = \frac{1}{(n-1)^2} \text{tr}(KHLH)$$
-        <div class="caption">
-          $H = I_n - \frac{1}{n}\mathbf{1}\mathbf{1}^\top$ is the centering matrix.
-        </div>
-      </div>
-
-      <h3>From HSIC to CKA: Normalization</h3>
-
-      <div class="math-block">
-        $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K) \cdot \text{HSIC}(L, L)}}$$
-        <div class="caption">
-          CKA is bounded between 0 and 1. CKA = 1 means perfect alignment.
-        </div>
-      </div>
-
-      <p>
-        CKA can also be interpreted as the cosine of the angle between centered kernel matrices when viewed as vectors.
-      </p>
-
-      <h3>The Problem with CKA: Global Domination</h3>
-
-      <p>
-        CKA is dominated by <strong>global structure</strong>—particularly the largest principal components. Two representations might have different local structure but similar global clusters, leading to high CKA.
-      </p>
-
-      <h3>CKNNA: Focusing on Local Structure</h3>
-
-      <p>
-        <strong>Centered Kernel Nearest Neighbor Alignment (CKNNA)</strong> restricts comparison to local neighborhoods.
-      </p>
-
-      <div class="definition">
-        <div class="term">Definition: Mutual k-NN</div>
-        <p>
-          Points $i$ and $j$ are <strong>mutual k-nearest neighbors</strong> if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is among the $k$ closest points to $j$.
-        </p>
-      </div>
-
-      <div class="math-block">
-        $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
-        <div class="caption">
-          $M_k$ is the mutual k-NN mask. Only mutual k-NN pairs contribute to the similarity score.
-        </div>
-      </div>
-
-      <div class="insight">
-        By zeroing out non-local pairs, CKNNA asks: "Do these representations agree on similarity structure <em>within</em> local neighborhoods?"
-      </div>
-    </section>
-
-    <!-- ==================== RESEARCH DIRECTION ==================== -->
-    <section id="research-direction">
-      <h2>Our Research Direction</h2>
-
-      <div class="key-question">
-        <strong>Key Question 1</strong>
-        At what point during training does a model's representation start converging toward its final form?
-      </div>
-
-      <div class="key-question">
-        <strong>Key Question 2</strong>
-        Can we observe the phenomenon of <em>grokking</em> through the lens of representation analysis?
-      </div>
-
-      <h3>A Brief Introduction to Grokking</h3>
-
-      <div class="definition">
-        <div class="term">Grokking</div>
-        <p>
-          A phenomenon where neural networks suddenly generalize long after achieving perfect training accuracy. The model appears to "memorize" initially, then undergoes a delayed phase transition to genuine understanding.
-        </p>
-      </div>
-
-      <p>
-        We hypothesize that grokking corresponds to a <strong>representational phase transition</strong>:
-      </p>
-
-      <ul>
-        <li><strong>Memorization phase:</strong> Complex, data-specific representation.</li>
-        <li><strong>Grokking transition:</strong> Representation simplifies and reorganizes.</li>
-        <li><strong>Generalization phase:</strong> Converged to something more canonical.</li>
-      </ul>
-
-      <div class="insight">
-        If this hypothesis is correct, our representational metrics should <em>detect</em> this transition.
-      </div>
-    </section>
-
-    <!-- ==================== EXPERIMENTS ==================== -->
-    <section id="experiments">
-      <h2>Experiment Setup</h2>
-
-      <h3>Model: The Pythia Suite</h3>
-
-      <p>
-        We use the <strong>Pythia</strong> family of language models, which provides dense checkpoints throughout training.
-      </p>
-
-      <ul>
-        <li><strong>Multiple scales:</strong> Models from 70M to 12B parameters.</li>
-        <li><strong>Consistent training:</strong> All trained on The Pile with same hyperparameters.</li>
-        <li><strong>Dense checkpoints:</strong> Steps 0, 1, 2, 4, 8, 16, ..., up to 143,000.</li>
-      </ul>
-
-      <h3>Data: WikiText-2</h3>
-
-      <p>
-        We use the <strong>WikiText-2-raw-v1</strong> dataset for computing representations:
-      </p>
-
-      <ul>
-        <li><strong>150 samples</strong> for dynamics experiments (k=16)</li>
-        <li><strong>400 samples</strong> for cross-model size comparisons (k=100)</li>
-      </ul>
-
-      <h3>Experimental Protocol</h3>
-
-      <h4>Experiment 1: Training Dynamics</h4>
-      <p>
-        For a single Pythia model, compare each checkpoint's representation against the final checkpoint using both CKA and CKNNA.
-      </p>
-
-      <h4>Experiment 2: Cross-Model Scale Comparison</h4>
-      <p>
-        Compare final representations across Pythia models of different sizes to test PRH predictions.
-      </p>
-
-      <h4>Experiment 3: Layer-Wise Analysis</h4>
-      <p>
-        Repeat dynamics analysis at different layers to understand hierarchical convergence patterns.
-      </p>
-    </section>
-
-    <!-- ==================== RESULTS ==================== -->
-    <section id="results">
-      <h2>Experiment Results</h2>
-
-      <h3>Result 1: Training Dynamics Reveal a Surprising Divergence</h3>
-
-      <figure class="figure-wide">
-        <img src="images/dynamics-final-layer.png" alt="CKA and CKNNA during training"/>
-        <figcaption>
-          <strong>Figure 1: Representation Convergence During Training.</strong>
-          CKA (blue) shows non-monotonic behavior with a sharp dip around step 20k-40k. CKNNA (orange) remains stable above 0.995 throughout.
-        </figcaption>
-      </figure>
-
-      <h4>What's Happening Here?</h4>
-
-      <ul>
-        <li><strong>Local structure is learned early and preserved.</strong> The stable CKNNA indicates the model quickly learns which points are similar.</li>
-        <li><strong>Global structure undergoes reorganization.</strong> The CKA dip shows the overall geometry is changing while local relationships are preserved.</li>
-      </ul>
-
-      <div class="insight">
-        Think of it like rearranging furniture in a house. Each room (local neighborhood) keeps its layout, but the rooms are being repositioned relative to each other.
-      </div>
-
-      <h3>Result 2: Deep Dive into the Reorganization Phase</h3>
-
-      <figure class="figure-wide">
-        <img src="images/kernel-analysis-256.png" alt="Kernel analysis at checkpoint 256"/>
-        <figcaption>
-          <strong>Figure 2: Kernel Analysis at Checkpoint 256.</strong>
-          Local pairs correlation (r=0.995) is much tighter than global pairs (r=0.965).
-        </figcaption>
-      </figure>
-
-      <figure class="figure-wide">
-        <img src="images/kernel-analysis-4000.png" alt="Kernel analysis at checkpoint 4000"/>
-        <figcaption>
-          <strong>Figure 3: Kernel Analysis at Checkpoint 4000.</strong>
-          Global pairs have improved to r=0.980 while local pairs remain at r=0.994.
-        </figcaption>
-      </figure>
-
-      <h3>Result 3: Layer-Specific Convergence Patterns</h3>
-
-      <figure class="figure-wide">
-        <img src="images/layer-12-convergence.png" alt="Layer 12 convergence"/>
-        <figcaption>
-          <strong>Figure 4: Convergence at Layer 12.</strong>
-          Middle layers stabilize faster and show less pronounced CKA dips.
-        </figcaption>
-      </figure>
-
-      <h3>Result 4: Model Scale and Representation Alignment</h3>
-
-      <figure class="figure-wide">
-        <img src="images/scale-alignment.png" alt="Alignment vs model size"/>
-        <figcaption>
-          <strong>Figure 5: Alignment Across Model Sizes.</strong>
-          Larger model pairs show higher alignment, supporting the PRH.
-        </figcaption>
-      </figure>
-
-      <div class="hypothesis-box">
-        <div class="label">Key Finding 1: Local Before Global</div>
-        <p>Models learn local similarity structure early and preserve it. Global geometry continues to evolve.</p>
-      </div>
-
-      <div class="hypothesis-box">
-        <div class="label">Key Finding 2: Non-Monotonic Convergence</div>
-        <p>There is a distinct reorganization phase where global structure changes while local structure is preserved.</p>
-      </div>
-
-      <div class="hypothesis-box">
-        <div class="label">Key Finding 3: Scale Drives Convergence</div>
-        <p>Larger models show higher mutual alignment, supporting the Platonic Representation Hypothesis.</p>
-      </div>
-    </section>
-
-    <!-- ==================== REFINED HYPOTHESIS ==================== -->
-    <section id="refined-hypothesis">
-      <h2>Refining the Platonic Hypothesis</h2>
-
-      <p>
-        Our findings suggest a more nuanced formulation: <strong>alignment should happen primarily locally, within semantic neighborhoods</strong>.
-      </p>
-
-      <h3>The Lobe Structure of Representations</h3>
-
-      <p>
-        Neural networks have multi-scale structure:
-      </p>
-
-      <ul>
-        <li><strong>Atomic scale:</strong> Local crystal-like structures.</li>
-        <li><strong>Intermediate scale:</strong> Semantic "lobes" like brain regions.</li>
-        <li><strong>Galaxy scale:</strong> Global organization of lobes.</li>
-      </ul>
-
-      <div class="hypothesis-box">
-        <div class="label">Refined Platonic Representation Hypothesis</div>
-        <p>
-          For sufficiently capable models, the representation within each semantic lobe should be equivalent up to <em>local</em> rotation and scaling. Different models may organize globally differently while agreeing locally.
-        </p>
-      </div>
-
-      <h3>Why This Explains Our Results</h3>
-
-      <ul>
-        <li><strong>CKNNA focuses on local neighborhoods</strong>—exactly what should align.</li>
-        <li><strong>CKA is dominated by global structure</strong>—where alignment is not guaranteed.</li>
-        <li><strong>The CKA dip</strong> corresponds to global reorganization while local structure remains stable.</li>
-      </ul>
-
-      <div class="insight">
-        The refined hypothesis provides a principled reason to prefer CKNNA: it directly measures what the hypothesis claims should align.
-      </div>
-    </section>
-
-    <!-- ==================== CONCLUSION ==================== -->
-    <section id="conclusion">
-      <h2>Conclusion</h2>
-
-      <h3>What We Found</h3>
-
-      <h4>1. Local Before Global</h4>
-      <p>Models establish local similarity structure early and preserve it. Global geometry continues evolving.</p>
-
-      <h4>2. Non-Monotonic Convergence</h4>
-      <p>There's a distinct "reorganization phase" that may correspond to a transition from memorization to generalization.</p>
-
-      <h4>3. Metrics Reveal Different Stories</h4>
-      <p>CKA sees global structure; CKNNA focuses on local neighborhoods. Using both reveals dynamics that either alone would miss.</p>
-
-      <h3>Novel Contributions</h3>
-
-      <ul>
-        <li><strong>Dynamics perspective:</strong> Applying representation analysis to learning dynamics, not just fixed models.</li>
-        <li><strong>Connection to grokking:</strong> The non-monotonic pattern suggests links between representation reorganization and generalization transitions.</li>
-        <li><strong>Refined hypothesis:</strong> Local alignment may be what matters for transfer and generalization.</li>
-      </ul>
-
-      <h3>Future Directions</h3>
-
-      <ul>
-        <li>Systematic study across model scales.</li>
-        <li>Explicit grokking experiments on algorithmic tasks.</li>
-        <li>Cross-modal analysis for vision and language models.</li>
-        <li>Theoretical foundations for why local stabilizes before global.</li>
-      </ul>
-    </section>
-
-    <!-- ==================== REFERENCES ==================== -->
-    <section id="references">
-      <h2>References</h2>
-
-      <ol>
-        <li>
-          <strong>Huh, M., Cheung, B., Wang, T., & Isola, P. (2024).</strong>
-          <em>The Platonic Representation Hypothesis.</em> ICML.
-        </li>
-        <li>
-          <strong>Biderman, S., et al. (2023).</strong>
-          <em>Pythia: A Suite for Analyzing Large Language Models.</em> ICML.
-        </li>
-        <li>
-          <strong>Kornblith, S., et al. (2019).</strong>
-          <em>Similarity of Neural Network Representations Revisited.</em> ICML.
-        </li>
-        <li>
-          <strong>Gretton, A., et al. (2005).</strong>
-          <em>Measuring Statistical Dependence with Hilbert-Schmidt Norms.</em>
-        </li>
-        <li>
-          <strong>Power, A., et al. (2022).</strong>
-          <em>Grokking: Generalization Beyond Overfitting.</em> ICLR Workshop.
-        </li>
-        <li>
-          <strong>Anthropic (2023).</strong>
-          <em>Scaling Monosemanticity.</em>
-        </li>
-        <li>
-          <strong>Mikolov, T., et al. (2013).</strong>
-          <em>Linguistic Regularities in Continuous Space Word Representations.</em>
-        </li>
-        <li>
-          <strong>Merity, S., et al. (2017).</strong>
-          <em>Pointer Sentinel Mixture Models.</em> ICLR.
-        </li>
-      </ol>
-    </section>
   </main>
-
   <footer>
     <div class="footer-content">
-      <p>Graduate Course Project · Deep Learning · 2024</p>
+      <p>Graduate Course Project · 2024</p>
     </div>
   </footer>
-
   <script>
-    // Progress bar
     window.addEventListener('scroll', () => {
       const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
       const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
       const scrolled = (winScroll / height) * 100;
       document.getElementById('progress').style.width = scrolled + '%';
     });
-
-    // Active nav link
     const sections = document.querySelectorAll('section[id]');
     const navLinks = document.querySelectorAll('nav a');
-
     window.addEventListener('scroll', () => {
       let current = '';
       sections.forEach(section => {
@@ -621,7 +691,6 @@
           current = section.getAttribute('id');
         }
       });
-
       navLinks.forEach(link => {
         link.classList.remove('active');
         if (link.getAttribute('href').slice(1) === current) {
