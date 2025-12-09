@@ -388,7 +388,7 @@
 
         <p>
           For our experiments, we use text samples from the
-          <strong>WikiText-2-raw-v1</strong> dataset. This dataset provides
+          <strong>WikiText-2-raw-v1</strong> dataset<span class="citation">[12]</span>. This dataset provides
           high-quality Wikipedia articles that serve as a good test bed for
           analyzing language model representations. The text is relatively clean
           and covers diverse topics, making it suitable for probing general
@@ -542,92 +542,112 @@
             achieves both local and global stability.
           </li>
         </ul>
-
-        <div class="insight">
-          This pattern suggests a two-phase learning process: first, the model learns
-          to cluster similar points together (local structure), then it refines how clusters
-          relate to each other (global structure).
-        </div>
-
-        <h3>Deep Dive: Kernel Matrix Analysis</h3>
+        <h4>Small Models Show the Same Pattern</h4>
 
         <p>
-          To understand what drives the CKA drop, we examine the kernel matrices
-          at two key checkpoints: early training (step 256) and mid-training
-          (step 4000).
+          A natural question is whether this reorganization phenomenon requires
+          large model capacity. We tested this by analyzing Pythia-70M, a
+          significantly smaller model. Surprisingly, the same pattern emerges:
         </p>
-
-        <p> Need to add experiment around step 20000-50000 of reorganisation period</p>
 
         <figure class="figure-wide">
           <img
-            src="assets/images/kernel-analysis-256.png"
-            alt="Detailed kernel analysis at checkpoint 256"
+            src="assets/images/global_rearrangement_70m.png"
+            alt="CKA and CKNNA dynamics for Pythia-70M showing global reorganization"
           />
           <figcaption>
-            <strong
-              >Figure 2: Kernel Analysis at Checkpoint 256 (Early
-              Training).</strong
-            >
-            <strong>Top row:</strong> Kernel matrices K (checkpoint 256), L
-            (final checkpoint), and mutual kNN mask (k=16). The checkered
-            pattern in K and L reveals cluster structure in the data.
-            <strong>Bottom row:</strong> Scatter plots showing local pairs
-            correlation (r=0.995) versus global pairs correlation (r=0.965),
-            plus the absolute difference |K-L|. The 3% gap between local and
-            global correlation is the signature of global reorganization—nearby
-            points agree strongly, but distant points show more divergence.
+            <strong>Figure 1b: Global Reorganization in Pythia-70M.</strong>
+            Even this small model exhibits the characteristic CKA dip around
+            steps 20,000-30,000 while CKNNA remains stable above 0.98. This
+            suggests global reorganization is a fundamental property of training
+            dynamics, not merely an artifact of large model capacity.
           </figcaption>
         </figure>
 
+        <div class="insight">
+          The emergence of global reorganization even in 70M-parameter models
+          suggests this is not a capacity-dependent phenomenon but a fundamental
+          aspect of how neural networks learn: local semantic structure
+          crystallizes early, while global geometric relationships require
+          extended training to stabilize.
+        </div>
+
+        <h3>Deep Dive: Kernel Matrix Analysis</h3>
         <p>
-          The kernel matrices reveal a clear structure: both K and L show
-          similar "checkered" patterns indicating cluster organization in the
-          data. The bright spots along the diagonal and at certain off-diagonal
-          positions correspond to groups of semantically similar text passages.
-          What's remarkable is how similar these structures are even at step
-          256—the model has already learned which points belong together.
+          To understand what drives the CKA drop, we examine the kernel matrices
+          during the reorganization period itself—checkpoints 28,000 through
+          60,000—where the model is actively restructuring its global geometry.
         </p>
 
         <figure class="figure-wide">
           <img
-            src="assets/images/kernel-analysis-4000.png"
-            alt="Detailed kernel analysis at checkpoint 4000"
+            src="assets/images/kernel-analysis-28000.png"
+            alt="Kernel analysis at checkpoint 28000"
           />
           <figcaption>
-            <strong
-              >Figure 3: Kernel Analysis at Checkpoint 4000
-              (Mid-Training).</strong
-            >
-            Same analysis as Figure 2 but at step 4000. The global pairs
-            correlation has improved to 0.980 (up from 0.965), while local pairs
-            remain at 0.994. The |K-L| difference map shows similar structure to
-            checkpoint 256, but with generally smaller magnitudes. The model is
-            converging toward the final representation, with global structure
-            catching up to local structure.
+            <strong>Figure 2: Kernel Analysis at Step 28,000 (Early Reorganization).</strong>
+            Local pairs correlation (r=0.995) versus global pairs correlation
+            (r=0.993). The gap is small here—reorganization is just beginning.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-wide">
+          <img
+            src="assets/images/kernel-analysis-40000.png"
+            alt="Kernel analysis at checkpoint 40000"
+          />
+          <figcaption>
+            <strong>Figure 3: Kernel Analysis at Step 40,000 (Peak Reorganization).</strong>
+            The local-global gap widens: local pairs remain tight (r=0.994)
+            while global pairs drop to r=0.987. This is the heart of the
+            reorganization phase.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-wide">
+          <img
+            src="assets/images/kernel-analysis-50000.png"
+            alt="Kernel analysis at checkpoint 50000"
+          />
+          <figcaption>
+            <strong>Figure 4: Kernel Analysis at Step 50,000.</strong>
+            Similar pattern persists: local r=0.994, global r=0.986. The model
+            is still restructuring distant relationships while preserving
+            neighborhoods.
+          </figcaption>
+        </figure>
+
+        <figure class="figure-wide">
+          <img
+            src="assets/images/kernel-analysis-60000.png"
+            alt="Kernel analysis at checkpoint 60000"
+          />
+          <figcaption>
+            <strong>Figure 5: Kernel Analysis at Step 60,000 (Late Reorganization).</strong>
+            Local pairs tighten further (r=0.996) while global pairs begin
+            recovery (r=0.984). The model is emerging from the reorganization
+            phase with both local and global structure converging.
           </figcaption>
         </figure>
 
         <h4>The Local-Global Gap</h4>
 
         <p>
-          The scatter plots in Figures 2 and 3 reveal the key insight:
-          <strong
-            >local pairs (mutual k-NN) show tighter correlation than global
-            pairs (all pairs)</strong
-          >. At checkpoint 256:
+          The scatter plots across the reorganization period reveal the key
+          insight: <strong>local pairs maintain tight correlation throughout,
+          while global pairs show a characteristic dip and recovery</strong>.
+          During peak reorganization (steps 40,000-50,000):
         </p>
 
         <ul>
-          <li>Local pairs correlation: <strong>r = 0.995</strong></li>
-          <li>Global pairs correlation: <strong>r = 0.965</strong></li>
+          <li>Local pairs correlation: <strong>r ≈ 0.994</strong> (stable)</li>
+          <li>Global pairs correlation: <strong>r ≈ 0.986-0.987</strong> (depressed)</li>
         </ul>
 
         <p>
-          This 3% gap explains exactly why CKNNA stays high while CKA dips.
-          CKNNA only "sees" the local pairs where agreement is near-perfect. CKA
-          sees all pairs, including the global ones that are still being
-          reorganized.
+          This ~0.8% gap during reorganization explains exactly why CKNNA stays
+          high while CKA dips. By step 60,000, both metrics begin converging as
+          the model settles into its final representation structure.
         </p>
 
         <h3>Layer-Specific Analysis: Middle vs. Final Layers</h3>
@@ -827,7 +847,7 @@
         <h3>Why This Explains CKNNA's Superiority</h3>
 
         <p>
-          Our hypothesis helps to explain why CKNNA performs better than CKA :
+          Our hypothesis helps to explain why CKNNA performs better than CKA:
           <strong
             >CKNNA extracts only the k-nearest neighbor points that are likely
             to belong to the same neighborhood, while ignoring vectors that are
@@ -1078,6 +1098,18 @@
             <span class="ref-venue"
               >NIPS 2015 Workshop on Feature Extraction: Modern Questions and
               Challenges.</span
+            >
+          </li>
+          <li>
+            <span class="ref-authors"
+              >Merity, S., Xiong, C., Bradbury, J., & Socher, R.</span
+            >
+            (2016).
+            <span class="ref-title"
+              >WikiText-2-raw-v1: Long-Term Dependency Language Modeling Dataset.</span
+            >
+            <span class="ref-venue"
+              >Salesforce Research. Available at Hugging Face: https://huggingface.co/datasets/Salesforce/wikitext (configuration: wikitext-2-raw-v1).</span
             >
           </li>
         </ol>
