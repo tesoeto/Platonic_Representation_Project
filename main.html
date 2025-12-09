@@ -120,8 +120,8 @@
           We run experiments to demonstrate the evolution of the alignment of
           the model over training epoch. We observe that the first few layers
           align quickly, while for the later layers we observe a phase of
-          plateau followed by a sharp transition of alignment—a phenomenon
-          reminiscent of Grokking.
+          alignment dip and plateau followed by a sharp transition of increase
+          in alignment.
         </div>
 
         <h3>The Linear Representation Hypothesis</h3>
@@ -212,9 +212,8 @@
           \quad \mathcal{K}(x_i, x_j) = \langle f(x_i), f(x_j) \rangle$$
           <div class="caption">
             The kernel $K(x_i, x_j)$ calculates the similarities between the
-            different representations of the datapoints using inner product.
-            This gives us a way to compare points without directly comparing
-            high-dimensional vectors.
+            different representations of the datapoints using inner product, allowing
+            us to analyse the geometry of the representation space more generally than just comparing high dimensional vectors. 
           </div>
         </div>
 
@@ -325,13 +324,13 @@
 
         <p>
           CKA computes similarity over <em>all</em> pairs of points, which means
-          it's dominated by global structure—particularly the largest principal
-          components. Consider two representations that organize data into the
-          same global clusters but differ in fine-grained local structure. CKA
-          will report high similarity because the large-scale structure
-          dominates the sum. But local structure often matters more for
-          downstream tasks—knowing which specific points are most similar to a
-          query is crucial for retrieval, few-shot learning, and more.
+          it's sensitive to global structure. Consider two representations that
+          organize data into the same global clusters but differ in fine-grained
+          local structure. CKA will report higher similarity because the
+          large-scale structure influences the sum. But local structure often
+          matters more for downstream tasks—knowing which specific points are
+          most similar to a query is crucial for retrieval, few-shot learning,
+          and more.
         </p>
 
         <h3>CKNNA: Focusing on Local Structure</h3>
@@ -545,10 +544,7 @@
         </ul>
 
         <div class="insight">
-          Think of it like rearranging furniture in a house: the rooms (local
-          neighborhoods) keep their internal arrangement, but the house itself
-          (global structure) is being remodeled. Points that were close stay
-          close, but the overall geometry—the "floor plan"—transforms.
+          ********* TO BE ADDED *********
         </div>
 
         <h3>Deep Dive: Kernel Matrix Analysis</h3>
@@ -558,6 +554,8 @@
           at two key checkpoints: early training (step 256) and mid-training
           (step 4000).
         </p>
+
+        <p> Need to add experiment around step 20000-50000 of reorganisation period</p>
 
         <figure class="figure-wide">
           <img
@@ -738,7 +736,7 @@
           <li>
             <strong>Diminishing returns at scale:</strong> The gap between
             consecutive model sizes shrinks as we move to larger models. The
-            jump from 70M to 160M is substantial; the jump from 1.4B to 2.8B is
+            jump from 70M to 160M is substantial; the jump from 1B to 1.4B is
             smaller.
           </li>
         </ul>
@@ -751,43 +749,9 @@
           is more universal than global structure.
         </div>
 
-        <h3>Connecting to Grokking</h3>
-
-        <p>
-          The non-monotonic behavior of CKA during training is reminiscent of
-          <strong>grokking</strong>—the phenomenon where models suddenly
-          generalize long after achieving perfect training accuracy. The pattern
-          we observe suggests:
-        </p>
-
-        <ol>
-          <li>
-            <strong>Initial learning phase (steps 0-15k):</strong> Rapid
-            improvement in both local and global alignment. The model is
-            learning basic structure.
-          </li>
-          <li>
-            <strong>Reorganization phase (steps 20k-50k):</strong> Global
-            structure is reorganized while local structure is preserved. This
-            may correspond to a transition from memorization to
-            generalization—the model keeps its learned associations but
-            reorganizes how they fit together.
-          </li>
-          <li>
-            <strong>Convergence phase (steps 50k+):</strong> Both metrics
-            converge toward 1.0 as the representation stabilizes into its final
-            form.
-          </li>
+        
         </ol>
 
-        <div class="insight">
-          The preservation of local structure during global reorganization
-          suggests that the model maintains useful learned features while
-          restructuring how they relate to each other. This is exactly what we'd
-          expect during a transition from memorization to generalization: the
-          "facts" (local relationships) stay the same, but the "theory" (global
-          organization) changes.
-        </div>
       </section>
 
       <!-- SECTION: Refined Hypothesis -->
@@ -912,12 +876,6 @@
             locally-aligned neighborhoods.
           </li>
         </ul>
-
-        <p>
-          Unfortunately, due to time and resource constraints, we are not able
-          to develop rigorous tests of this hypothesis, but we encourage readers
-          to expand on this idea.
-        </p>
       </section>
 
       <!-- SECTION: Conclusion -->
@@ -970,14 +928,7 @@
             just compare trained models. This reveals structure in how
             representations evolve that static comparisons miss.
           </li>
-          <li>
-            <strong>Connection to grokking:</strong> The non-monotonic alignment
-            pattern—particularly the preservation of local structure during
-            global reorganization—suggests a connection between representation
-            dynamics and generalization transitions. This opens new avenues for
-            understanding grokking through the lens of representational
-            geometry.
-          </li>
+
           <li>
             <strong>Refined local alignment hypothesis:</strong> Our theoretical
             framework suggests that convergent representations should be
@@ -996,12 +947,6 @@
             final degree of alignment.
           </li>
           <li>
-            <strong>Explicit grokking experiments:</strong> Run experiments on
-            algorithmic tasks (modular arithmetic, group operations) where
-            grokking is known to occur, tracking CKA/CKNNA to see if
-            representation metrics can predict the grokking transition.
-          </li>
-          <li>
             <strong>Cross-modal analysis:</strong> Test whether vision and
             language models show similar local-before-global convergence
             patterns, and whether their representations become more aligned at
@@ -1014,15 +959,6 @@
             dynamics produce this pattern?
           </li>
         </ul>
-
-        <div class="insight">
-          We also provide a short speculation of the reason behind different
-          performances of the kernels. At the end, we provide a speculation of
-          the hypothesis that requires further works to be done. We hope this
-          work inspires further investigation into the dynamics of
-          representation learning and the nature of convergent representations
-          in neural networks.
-        </div>
       </section>
 
       <!-- SECTION: References -->
