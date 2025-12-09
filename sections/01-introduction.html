@@ -1,0 +1,112 @@
+<!-- Section: Introduction -->
+<section id="introduction">
+  <h2>Introduction</h2>
+
+  <div class="key-question">
+    <strong>The Central Puzzle</strong>
+    Why do neural networks trained on completely different data—text, images, audio—end up learning strikingly similar internal representations?
+  </div>
+
+  <h3>From Many Models to One Foundation</h3>
+
+  <p>
+    The old paradigm of machine learning was straightforward: different tasks required different models. Image classification used CNNs, language modeling used RNNs, speech recognition had its own architectures. Each domain developed in isolation, with specialized inductive biases baked into the model design.
+  </p>
+
+  <p>
+    Modern Large Language Models like GPT-4 and Claude shatter this paradigm entirely. A single unified neural network backbone—the <strong>foundation model</strong>—built on the Transformer architecture with shared weights can perform image captioning, text generation, code synthesis, and much more. The same weights, the same representations, serving radically different purposes.
+  </p>
+
+  <p>
+    Here's what makes this deeply surprising: instead of suffering from the jack-of-all-trades problem, these multimodal models actually <em>perform better</em> than single-modality specialists when trained on large, diverse corpora. Training on both images and text doesn't dilute the model's language understanding—it enhances it.
+  </p>
+
+  <div class="insight">
+    This observation points to something profound: there may exist a <strong>unified representation</strong> of different modalities that captures the same underlying objects and concepts. Images of cats and descriptions of cats might converge to similar internal codes.
+  </div>
+
+  <h3>The Platonic Representation Hypothesis</h3>
+
+  <p>
+    To explain this phenomenon, Huh et al. introduced the <strong>Platonic Representation Hypothesis (PRH)</strong>. The philosophical reference is deliberate and illuminating.
+  </p>
+
+  <div class="analogy">
+    <strong>Plato's Cave Allegory:</strong> Prisoners in a cave see only shadows on a wall, cast by objects passing before a fire. The shadows are imperfect projections of true Forms that exist in an idealized realm. Similarly, word descriptions and image pixels are merely <em>shadows</em> of the true objects they represent—partial, noisy observations of an underlying reality.
+  </div>
+
+  <p>
+    The PRH formalizes this intuition: there exists an idealized statistical model $P(z)$ that governs events in our universe. Every observation we make—whether through language, vision, or any other modality—provides only partial information about these latent objects $z$. A sufficiently capable model, trained to predict these observations accurately, must discover structure in the underlying $z$ itself.
+  </p>
+
+  <h3>Why Does Convergence Happen?</h3>
+
+  <p>
+    The original PRH paper proposed three complementary mechanisms driving representation convergence:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 1: Convergence via Task Generality</div>
+    <p>
+      As we increase the number of data points and tasks, the constraints on the model multiply. To perform well across a massive, diverse dataset, the model's hypothesis space shrinks dramatically. There are simply fewer representation schemes that can satisfy all these constraints simultaneously.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 2: Convergence via Model Capacity</div>
+    <p>
+      Larger models have the capacity to discover more optimal solutions. A small model might settle for a hacky shortcut that works on limited data. A large model, with its greater representational bandwidth, can find the elegant, generalizable solution that happens to align with the structure of reality itself.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Hypothesis 3: The Simplicity Bias</div>
+    <p>
+      Larger models tend to find <em>simpler</em> solutions, even though they have the capacity for more complex ones. This is observed empirically but not yet fully understood theoretically. Perhaps the optimization landscape of larger models favors smooth, compressible representations.
+    </p>
+  </div>
+
+  <h3>Connecting to the Structure of Representations</h3>
+
+  <p>
+    What do these converged representations actually look like? The ML community has long accepted that <strong>directions in representation space encode semantic meaning</strong>. The famous example: the vector arithmetic $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$ suggests that gender is encoded as a consistent direction across different word concepts.
+  </p>
+
+  <p>
+    Mathematically, this is the <strong>linear representation hypothesis</strong>: each semantic feature corresponds to a unit vector $d_i$ in representation space, and any representation can be decomposed as $\sum_i a_i d_i$ where $a_i$ measures how much of feature $i$ is present. This elegant picture, however, only holds approximately.
+  </p>
+
+  <p>
+    Recent work from Anthropic using <strong>Sparse Autoencoders (SAEs)</strong> reveals a richer picture. The representation space has structure at multiple scales:
+  </p>
+
+  <ul>
+    <li><strong>Atomic scale:</strong> Local crystal-like structures with parallelogram or trapezoid faces, approximately satisfying the linear representation hypothesis.</li>
+    <li><strong>Intermediate scale:</strong> Neurons that fire to similar concepts—like coding and math—cluster together in lobes, reminiscent of brain structure seen in fMRI images.</li>
+    <li><strong>Galaxy scale:</strong> Global organization of these clusters into larger patterns.</li>
+  </ul>
+
+  <div class="insight">
+    This multi-scale structure suggests a sense of <em>smoothness</em> in the representation space. Given a point $x$ and a sufficiently small radius $\epsilon$, all points in the ball $B_\epsilon(x) = \{y : |x - y| < \epsilon\}$ have similar semantic meanings. Nearby things mean similar things.
+  </div>
+
+  <h3>Our Contribution: The Dynamics of Convergence</h3>
+
+  <p>
+    Prior work on the PRH has focused on comparing <em>final trained models</em>—asking whether Model A and Model B end up in similar representational states. But this leaves out a crucial dimension: <strong>how</strong> do representations evolve during training to reach this convergence?
+  </p>
+
+  <p>
+    In this work, we investigate the <em>dynamics</em> of representation convergence. We ask:
+  </p>
+
+  <ul>
+    <li>At what point during training does a model start converging to its final representation?</li>
+    <li>Does alignment happen uniformly, or are there distinct phases—perhaps resembling the phenomenon of <em>grokking</em>?</li>
+    <li>Do different layers converge at different rates, and what does this tell us about the hierarchical nature of representations?</li>
+  </ul>
+
+  <p>
+    By applying representational analysis to learning dynamics—not just final states—we reveal structure in how models learn that static comparisons miss entirely.
+  </p>
+</section>

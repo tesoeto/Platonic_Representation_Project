@@ -1,0 +1,193 @@
+<!-- Section: Experiment Results -->
+<section id="results">
+  <h2>Experiment Results</h2>
+
+  <p>
+    Our experiments reveal striking patterns in how representations evolve during training—patterns that distinguish global from local structure and suggest connections to grokking-like dynamics.
+  </p>
+
+  <h3>Result 1: Training Dynamics Reveal a Surprising Divergence</h3>
+
+  <p>
+    Our first and most striking finding comes from tracking CKA and CKNNA throughout training. The two metrics tell very different stories.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="images/dynamics-final-layer.png" alt="CKA and CKNNA during training showing divergent behavior"/>
+    <figcaption>
+      <strong>Figure 1: Representation Convergence During Training (Final Layer).</strong>
+      CKA (blue) shows dramatic non-monotonic behavior: it rises initially, then <em>drops sharply</em> around step 20,000, reaching a minimum near step 40,000, before recovering. CKNNA (orange) tells a different story: it starts high (~0.995) and remains stable throughout, never dropping below 0.995.
+    </figcaption>
+  </figure>
+
+  <h4>What's Happening Here?</h4>
+
+  <p>
+    The divergence between CKA and CKNNA is not noise—it reveals something fundamental about the learning dynamics:
+  </p>
+
+  <ul>
+    <li><strong>Local structure is learned early and preserved.</strong> The stable CKNNA (always >0.995) indicates that the model quickly learns which points are similar to which. These local neighborhoods stay consistent throughout training.</li>
+    <li><strong>Global structure undergoes reorganization.</strong> The CKA dip shows that while local relationships are preserved, the <em>overall geometry</em> of the representation space is changing. Points maintain their relative neighborhoods, but how those neighborhoods relate to each other globally is being restructured.</li>
+  </ul>
+
+  <div class="insight">
+    Think of it like rearranging furniture in a house. During the reorganization (steps 20k-50k), each room (local neighborhood) keeps its internal layout, but the rooms are being repositioned relative to each other. The house's floorplan is changing, even though each room looks the same inside.
+  </div>
+
+  <h4>Connecting to Grokking</h4>
+
+  <p>
+    This non-monotonic pattern is reminiscent of grokking dynamics. We observe three phases:
+  </p>
+
+  <ol>
+    <li><strong>Initial learning (steps 0-15k):</strong> Rapid improvement in both local and global alignment. The model is learning basic structure.</li>
+    <li><strong>Reorganization (steps 20k-50k):</strong> Global structure is reorganized while local structure is preserved. This may correspond to a transition from memorization toward generalization—the model is compressing its representation.</li>
+    <li><strong>Convergence (steps 50k+):</strong> Both metrics converge toward 1.0 as the representation stabilizes into its final form.</li>
+  </ol>
+
+  <p>
+    The preservation of local structure during global reorganization is particularly intriguing. It suggests the model maintains useful learned features while restructuring how they relate—a signature of learning more efficient, generalizable representations.
+  </p>
+
+  <h3>Result 2: Deep Dive into the Reorganization Phase</h3>
+
+  <p>
+    To understand what drives the CKA drop, we examine the kernel matrices directly at two key checkpoints.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="images/kernel-analysis-256.png" alt="Kernel analysis at checkpoint 256"/>
+    <figcaption>
+      <strong>Figure 2: Kernel Analysis at Checkpoint 256 (Early Training).</strong>
+      <strong>Top row:</strong> Kernel matrix K (checkpoint 256), kernel matrix L (final checkpoint), and mutual kNN mask (k=16).
+      <strong>Bottom row:</strong> Scatter plots comparing kernel values for local pairs (r=0.995) and global pairs (r=0.965), plus the absolute difference |K-L| heatmap.
+    </figcaption>
+  </figure>
+
+  <p>
+    At checkpoint 256, we already see the key pattern:
+  </p>
+
+  <ul>
+    <li><strong>Local pairs (r=0.995):</strong> Extremely tight correlation. Points that are close in the final representation are also close in this early checkpoint.</li>
+    <li><strong>Global pairs (r=0.965):</strong> Good but weaker correlation. The overall structure is partially formed but not yet refined.</li>
+  </ul>
+
+  <p>
+    The difference map |K-L| shows where the discrepancies lie—primarily in the off-diagonal structure, representing inter-cluster relationships rather than intra-cluster distances.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="images/kernel-analysis-4000.png" alt="Kernel analysis at checkpoint 4000"/>
+    <figcaption>
+      <strong>Figure 3: Kernel Analysis at Checkpoint 4000 (Mid-Training).</strong>
+      Same analysis as Figure 2. Local pairs correlation remains at 0.994, while global pairs have improved to 0.980. The |K-L| difference map shows similar structure but reduced magnitude—the model is converging.
+    </figcaption>
+  </figure>
+
+  <p>
+    By checkpoint 4000, global correlation has improved from 0.965 to 0.980, while local correlation remains essentially unchanged (0.994 vs 0.995). This quantifies what we saw in Figure 1: local structure stabilizes early, global structure continues evolving.
+  </p>
+
+  <div class="analogy">
+    <strong>The Map Analogy Revisited:</strong> It's like having two maps of the same city. By checkpoint 256, both maps correctly show which buildings are next to each other (local structure). But they might disagree on compass directions or relative positions of distant neighborhoods. By checkpoint 4000, the global orientation is also starting to align.
+  </div>
+
+  <h3>Result 3: Layer-Specific Convergence Patterns</h3>
+
+  <p>
+    The Platonic Representation Hypothesis suggests that later layers—which encode more abstract, task-relevant features—should show stronger convergence effects. We test this by analyzing different layers.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="images/layer-12-convergence.png" alt="Convergence analysis at layer 12"/>
+    <figcaption>
+      <strong>Figure 4: Convergence Analysis at Layer 12 (Middle Layer).</strong>
+      Both CKA and CKNNA reach high alignment (>0.99) much earlier than the final layer. The CKA dip is less pronounced, and convergence happens faster. Middle layers stabilize before the final layer.
+    </figcaption>
+  </figure>
+
+  <p>
+    Layer 12 shows qualitatively similar dynamics but with key differences:
+  </p>
+
+  <ul>
+    <li><strong>Faster convergence:</strong> Both metrics reach high alignment (>0.995) by around step 10,000, much earlier than the final layer.</li>
+    <li><strong>Smaller CKA dip:</strong> The global reorganization is less dramatic at middle layers.</li>
+    <li><strong>CKNNA remains stable:</strong> Local structure is preserved at all layers—this appears to be a universal feature of training dynamics.</li>
+  </ul>
+
+  <div class="insight">
+    This supports a hierarchical picture of learning: early and middle layers learn stable representations quickly, while final layers continue restructuring for much longer. The "deep thinking" happens late, even though the foundational features are established early.
+  </div>
+
+  <h3>Result 4: Model Scale and Representation Alignment</h3>
+
+  <p>
+    How does model size affect representation alignment? The PRH predicts larger models should have more similar representations. We test this by comparing final representations across model sizes.
+  </p>
+
+  <figure class="figure-wide">
+    <img src="images/scale-alignment.png" alt="Representation alignment vs model size"/>
+    <figcaption>
+      <strong>Figure 5: Representation Alignment Across Model Sizes.</strong>
+      We compare adjacent Pythia models and measure alignment of their final representations. The x-axis shows log model size (sum of compared pair sizes). CKA and CKNNA (k=16 and k=100) all trend upward with scale, supporting the PRH.
+    </figcaption>
+  </figure>
+
+  <p>
+    The data shows a clear trend: larger models have more aligned representations. Key observations:
+  </p>
+
+  <ul>
+    <li><strong>All metrics increase with scale:</strong> CKA, CKNNA (k=16), and CKNNA (k=100) all show upward trends as model size increases.</li>
+    <li><strong>CKNNA is higher throughout:</strong> Local alignment is stronger than global alignment at all scales, consistent with our dynamics findings.</li>
+    <li><strong>Convergence toward 1.0:</strong> The largest model pairs approach near-perfect alignment (>0.999), suggesting that at sufficient scale, models converge to a common representation.</li>
+    <li><strong>Non-monotonic variations:</strong> Some pairs show slight dips, likely due to architectural differences between model scales rather than fundamental deviations from the trend.</li>
+  </ul>
+
+  <h4>Why Does Scale Help?</h4>
+
+  <p>
+    The PRH offers three explanations, all of which may contribute:
+  </p>
+
+  <ol>
+    <li><strong>Task generality:</strong> Larger models are trained to solve more tasks well. The constraints of multi-task performance force representations toward a common structure.</li>
+    <li><strong>Model capacity:</strong> Larger models can find more optimal solutions in the representation space. Smaller models might get stuck in local optima that happen to differ between random seeds.</li>
+    <li><strong>Simplicity bias:</strong> Larger models tend to find simpler solutions, and simple solutions are more likely to coincide across different training runs.</li>
+  </ol>
+
+  <h3>Synthesis: What Does This Tell Us?</h3>
+
+  <p>
+    Across all our experiments, a consistent picture emerges:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Key Finding 1: Local Before Global</div>
+    <p>
+      Models learn local similarity structure early and preserve it throughout training. Global geometry continues to evolve long after local neighborhoods are stable. CKNNA captures this better than CKA.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Key Finding 2: Non-Monotonic Convergence</div>
+    <p>
+      Representation alignment is not monotonic. There is a distinct "reorganization phase" where global structure changes significantly while local structure is preserved. This may correspond to a transition from memorization to generalization.
+    </p>
+  </div>
+
+  <div class="hypothesis-box">
+    <div class="label">Key Finding 3: Scale Drives Convergence</div>
+    <p>
+      Larger models show higher mutual alignment, supporting the Platonic Representation Hypothesis. At sufficient scale, different models trained on different data converge toward a common representational scheme.
+    </p>
+  </div>
+
+  <p>
+    These findings refine our understanding of the PRH: representations don't just converge—they converge in a structured way, with local structure leading and global structure following. And the metrics we use to measure convergence matter: CKA and CKNNA reveal different aspects of this complex process.
+  </p>
+</section>

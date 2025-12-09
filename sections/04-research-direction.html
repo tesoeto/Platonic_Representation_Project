@@ -1,0 +1,104 @@
+<!-- Section: Research Direction -->
+<section id="research-direction">
+  <h2>Our Research Direction</h2>
+
+  <p>
+    Armed with tools to measure representational similarity at both global and local scales, we now pose specific research questions about <em>how</em> representations evolve during training.
+  </p>
+
+  <div class="key-question">
+    <strong>Key Question 1</strong>
+    At what point during training does a model's representation start converging toward its final form? Is convergence gradual, or are there distinct phases?
+  </div>
+
+  <p>
+    This question probes the learning dynamics of neural networks. The standard story is that models gradually refine their representations as they see more data. But recent discoveries suggest the picture might be richer.
+  </p>
+
+  <div class="key-question">
+    <strong>Key Question 2</strong>
+    Can we observe the phenomenon of <em>grokking</em> through the lens of representation analysis?
+  </div>
+
+  <h3>A Brief Introduction to Grokking</h3>
+
+  <div class="definition">
+    <div class="term">Grokking</div>
+    <p>
+      A phenomenon where neural networks suddenly generalize long after achieving perfect training accuracy. The model appears to "memorize" the training data initially, then undergoes a delayed phase transition to genuine understanding—sometimes thousands of training steps later.
+    </p>
+  </div>
+
+  <p>
+    Grokking is deeply puzzling. Classical learning theory says generalization should improve monotonically with training, or at least plateau. Instead, grokking shows a <em>sharp transition</em>: the model sits at perfect train accuracy and poor test accuracy for a long time, then suddenly "gets it" and generalizes.
+  </p>
+
+  <div class="analogy">
+    <strong>The Student Analogy:</strong> Imagine a student who memorizes the exact problems from homework assignments and can solve them perfectly. On the exam (test set), they fail—they've memorized, not understood. But if they keep studying the same problems long enough, something clicks: they suddenly grasp the underlying principle and can solve novel problems. This is grokking.
+  </div>
+
+  <h4>The Connection to Representations</h4>
+
+  <p>
+    We hypothesize that grokking corresponds to a <strong>representational phase transition</strong>:
+  </p>
+
+  <ul>
+    <li><strong>Memorization phase:</strong> The model learns a complex, data-specific representation—essentially a lookup table encoded in neural weights.</li>
+    <li><strong>Grokking transition:</strong> The representation simplifies and reorganizes. It stops encoding instance-specific patterns and starts encoding generalizable structure.</li>
+    <li><strong>Generalization phase:</strong> The representation has converged to something more "canonical"—aligned with the underlying data structure.</li>
+  </ul>
+
+  <p>
+    If this hypothesis is correct, our representational metrics should <em>detect</em> this transition. We might see:
+  </p>
+
+  <ul>
+    <li>A period where representations at checkpoint $t$ differ significantly from the final representation (low alignment).</li>
+    <li>A sharp increase in alignment around the grokking transition.</li>
+    <li>Stable high alignment after generalization is achieved.</li>
+  </ul>
+
+  <div class="insight">
+    This perspective offers a novel direction: using representation analysis to study learning dynamics, not just to compare fixed trained models. Representations contain information about <em>how</em> the model is solving the task, not just <em>that</em> it solves it.
+  </div>
+
+  <h3>Connection to the Simplicity Bias</h3>
+
+  <p>
+    The third hypothesis of the PRH—that larger models find simpler solutions—may be intimately connected to grokking. Consider this speculation:
+  </p>
+
+  <ul>
+    <li>Early in training, the model finds a complex solution that memorizes the data.</li>
+    <li>As training continues, implicit regularization (weight decay, the geometry of loss landscape) pushes toward simpler solutions.</li>
+    <li>Eventually, the model "grokks" and transitions to a simpler representation that generalizes.</li>
+    <li>Larger models have more capacity to find these simpler solutions, explaining both the simplicity bias and faster/stronger convergence.</li>
+  </ul>
+
+  <p>
+    This is speculative, but it suggests a unified picture connecting the PRH, grokking, and the mysterious power of scale. Our experiments will probe this picture by examining representation dynamics.
+  </p>
+
+  <h3>Two Experimental Axes</h3>
+
+  <p>
+    We investigate representation convergence along two axes:
+  </p>
+
+  <h4>Axis 1: Temporal (Training Dynamics)</h4>
+
+  <p>
+    For a single model, how do representations at intermediate checkpoints compare to the final representation? We track alignment (both CKA and CKNNA) as a function of training step.
+  </p>
+
+  <h4>Axis 2: Scale (Model Size)</h4>
+
+  <p>
+    Across models of different sizes, how does final representation alignment change? The PRH predicts larger models should show higher mutual alignment.
+  </p>
+
+  <p>
+    By examining both axes, we can disentangle effects of training dynamics from effects of scale—and potentially observe signatures of grokking-like transitions in the representational trajectory.
+  </p>
+</section>

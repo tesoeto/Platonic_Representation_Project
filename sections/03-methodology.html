@@ -1,0 +1,199 @@
+<!-- Section: Methodology - Similarity Metrics -->
+<section id="methodology">
+  <h2>Methodology: Measuring Representational Similarity</h2>
+
+  <p>
+    How do we actually quantify whether two representations capture "the same information"? This section develops the mathematical machinery from first principles, building intuition at each step.
+  </p>
+
+  <h3>The Independence Question</h3>
+
+  <p>
+    Here's a clever reframing: instead of asking "how similar are $K$ and $L$?", ask the <em>opposite</em>—"how <strong>independent</strong> are they?" If the geometries captured by $K$ and $L$ were independent (unrelated), knowing the similarity structure from $K$ would tell us nothing about $L$. High dependence means the representations capture related information.
+  </p>
+
+  <h3>HSIC: The Hilbert-Schmidt Independence Criterion</h3>
+
+  <h4>Why Not Just Use Correlation?</h4>
+
+  <p>
+    Classical correlation only captures <em>linear</em> relationships. Two variables can have zero correlation but still be highly dependent—for example, $Y = X^2$ has no linear correlation with $X$, yet knowing $X$ completely determines $Y$. We need a measure that captures <em>all</em> forms of dependence.
+  </p>
+
+  <p>
+    <strong>HSIC</strong> achieves this by embedding distributions into a Reproducing Kernel Hilbert Space (RKHS), where dependence can be fully characterized. The key theoretical result:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Theorem (Gretton et al., 2005)</div>
+    <p>
+      For characteristic kernels (including RBF and linear kernels on bounded domains), $\text{HSIC}(X, Y) = 0$ if and only if $X$ and $Y$ are statistically independent.
+    </p>
+  </div>
+
+  <p>
+    This is powerful: HSIC is zero <em>exactly when</em> variables are independent, capturing all forms of dependence—not just linear.
+  </p>
+
+  <h4>HSIC as Covariance of Kernel Evaluations</h4>
+
+  <p>
+    Let's build intuition for what HSIC actually measures. Consider drawing two pairs of points $(x, y)$ and $(x', y')$ from a joint distribution. We compute:
+  </p>
+
+  <ul>
+    <li>$k(x, x')$: How similar are the two $x$-values?</li>
+    <li>$l(y, y')$: How similar are the two $y$-values?</li>
+  </ul>
+
+  <p>
+    HSIC is the covariance between these kernel evaluations:
+  </p>
+
+  <div class="math-block">
+    $$\text{HSIC}(X, Y) = \text{Cov}_{(x,y), (x',y') \sim P_{XY}}\big[k(x, x'), l(y, y')\big]$$
+    <div class="caption">
+      <strong>Interpretation:</strong> If $X$ and $Y$ are dependent, then similar $x$-values should co-occur with similar $y$-values. When $k(x, x')$ is high, $l(y, y')$ tends to be high too—creating positive covariance. Under independence, there's no such relationship.
+    </div>
+  </div>
+
+  <h4>The Empirical Estimator</h4>
+
+  <p>
+    Given $n$ samples, we estimate HSIC using kernel matrices $K$ and $L$:
+  </p>
+
+  <div class="math-block">
+    $$\widehat{\text{HSIC}}(K, L) = \frac{1}{(n-1)^2} \text{tr}(KHLH)$$
+    <div class="caption">
+      Here $H = I_n - \frac{1}{n}\mathbf{1}\mathbf{1}^\top$ is the <strong>centering matrix</strong>. Centering removes the mean, analogous to computing covariance rather than raw correlation.
+    </div>
+  </div>
+
+  <p>
+    The trace $\text{tr}(KHLH)$ sums up element-wise products of centered kernel matrices—essentially asking: "When two points are more similar than average in $K$, are they also more similar than average in $L$?"
+  </p>
+
+  <h3>From HSIC to CKA: Normalization</h3>
+
+  <p>
+    HSIC measures dependence, but its magnitude depends on the scale of the kernels. To compare across different representations, we normalize—just as we normalize covariance to get correlation:
+  </p>
+
+  <div class="math-block">
+    $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K) \cdot \text{HSIC}(L, L)}}$$
+    <div class="caption">
+      CKA is bounded between 0 and 1. CKA = 1 means perfect alignment; CKA = 0 means independence (no shared structure).
+    </div>
+  </div>
+
+  <h4>CKA as Cosine Similarity</h4>
+
+  <p>
+    There's another beautiful interpretation. Flatten the centered kernel matrix $\tilde{K} = HKH$ into a vector. Then CKA is simply the cosine of the angle between these vectors:
+  </p>
+
+  <div class="math-block">
+    $$\text{CKA}(K, L) = \frac{\langle \text{vec}(\tilde{K}), \text{vec}(\tilde{L}) \rangle}{\|\text{vec}(\tilde{K})\| \cdot \|\text{vec}(\tilde{L})\|} = \cos\theta$$
+    <div class="caption">
+      CKA measures alignment in the space of all possible similarity structures. It's asking: how aligned are these two "views" of which points are similar to which?
+    </div>
+  </div>
+
+  <h3>The Problem with CKA: Global Domination</h3>
+
+  <p>
+    Despite its elegance, CKA has a critical flaw. Because it computes similarity over <em>all</em> pairs of points, it's dominated by <strong>global structure</strong>—particularly the largest principal components.
+  </p>
+
+  <div class="analogy">
+    <strong>The Forest and the Trees:</strong> Imagine two city maps. Both correctly show that downtown is north of the suburbs (global structure). But one map has accurate street layouts while the other is jumbled at the local level. CKA might report high similarity because the coarse structure matches—even though navigating with the wrong map would be disastrous.
+  </div>
+
+  <p>
+    Mathematically, in $\sum_{i,j} \tilde{K}_{ij} \tilde{L}_{ij}$, pairs with extreme kernel values (very similar or very different points) contribute more than moderate local neighborhoods. But for tasks like retrieval and few-shot learning, local structure often matters more than global.
+  </p>
+
+  <h3>CKNNA: Focusing on Local Structure</h3>
+
+  <p>
+    <strong>Centered Kernel Nearest Neighbor Alignment (CKNNA)</strong> addresses this by restricting comparison to local neighborhoods.
+  </p>
+
+  <h4>Mutual k-Nearest Neighbors</h4>
+
+  <div class="definition">
+    <div class="term">Definition: Mutual k-NN</div>
+    <p>
+      Points $i$ and $j$ are <strong>mutual k-nearest neighbors</strong> if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is among the $k$ closest points to $j$. This symmetric relationship is more robust than one-way k-NN.
+    </p>
+  </div>
+
+  <p>
+    Why the "mutual" requirement? Some points are "hubs"—they appear in many neighborhoods. Without the mutual constraint, these hubs would dominate. Mutual k-NN ensures both points genuinely consider each other close.
+  </p>
+
+  <h4>The CKNNA Formula</h4>
+
+  <p>
+    Let $M_k \in \{0, 1\}^{n \times n}$ be the mutual k-NN mask from the reference (final) representation:
+  </p>
+
+  <div class="math-block">
+    $$(M_k)_{ij} = \begin{cases} 1 & \text{if } i \text{ and } j \text{ are mutual } k\text{-NN} \\ 0 & \text{otherwise} \end{cases}$$
+  </div>
+
+  <p>
+    CKNNA applies this mask before computing CKA:
+  </p>
+
+  <div class="math-block">
+    $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
+    <div class="caption">
+      $\odot$ denotes element-wise multiplication. Only mutual k-NN pairs contribute to the similarity score.
+    </div>
+  </div>
+
+  <h4>Why CKNNA Works Better</h4>
+
+  <p>
+    By zeroing out non-local pairs, CKNNA asks a focused question: <em>"Do these representations agree on similarity structure within local neighborhoods?"</em>
+  </p>
+
+  <ul>
+    <li><strong>Local focus:</strong> Only ~$nk$ pairs contribute (out of $n^2$ total), emphasizing fine-grained structure.</li>
+    <li><strong>Robustness to global changes:</strong> If global geometry changes but local neighborhoods are preserved, CKNNA stays high while CKA drops.</li>
+    <li><strong>Outlier resistance:</strong> Outliers rarely form mutual k-NN relationships, limiting their influence.</li>
+  </ul>
+
+  <div class="insight">
+    This connects to our refined platonic hypothesis: instead of demanding global alignment, we propose that representations should align <em>locally</em>—within semantic neighborhoods. CKNNA directly measures this local alignment.
+  </div>
+
+  <h4>Choosing k</h4>
+
+  <p>
+    The parameter $k$ controls the locality scale:
+  </p>
+
+  <ul>
+    <li><strong>Small $k$ (1-5):</strong> Very local, but potentially noisy due to small sample size.</li>
+    <li><strong>Large $k$ (~n/2):</strong> Approaches global comparison, losing locality.</li>
+    <li><strong>Moderate $k$ (16-100):</strong> Balances locality with statistical stability.</li>
+  </ul>
+
+  <h3>Summary: CKA vs CKNNA</h3>
+
+  <p>
+    Both metrics measure whether representations agree on similarity structure, but at different scales:
+  </p>
+
+  <ul>
+    <li><strong>CKA:</strong> Global alignment. Sensitive to major axes of variation. Can miss local structure differences.</li>
+    <li><strong>CKNNA:</strong> Local alignment. Focuses on neighborhood preservation. Robust to global reorganization.</li>
+  </ul>
+
+  <p>
+    By comparing both metrics, we can distinguish between changes in global geometry (CKA drops, CKNNA stable) and changes in local structure (both drop). This distinction will be crucial for understanding training dynamics.
+  </p>
+</section>

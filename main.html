@@ -1,1682 +1,634 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Convergent Representations in Neural Networks</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- MathJax for LaTeX -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script
-      id="MathJax-script"
-      async
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-    ></script>
-    <script>
-      window.MathJax = {
-        tex: {
-          inlineMath: [
-            ["$", "$"],
-            ["\\(", "\\)"],
-          ],
-          displayMath: [
-            ["$$", "$$"],
-            ["\\[", "\\]"],
-          ],
-        },
-      };
-    </script>
-
-    <style>
-      :root {
-        --color-bg: #faf9f7;
-        --color-bg-alt: #f0eeea;
-        --color-text: #1a1a1a;
-        --color-text-muted: #555;
-        --color-accent: #c41230;
-        --color-accent-light: #e85a5a;
-        --color-border: #ddd;
-        --color-code-bg: #282c34;
-        --color-highlight: #fff3cd;
-        --font-serif: "Crimson Pro", Georgia, serif;
-        --font-sans: "Source Sans 3", -apple-system, sans-serif;
-        --font-mono: "JetBrains Mono", monospace;
-        --max-width: 820px;
-        --side-margin: 2rem;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
-      body {
-        font-family: var(--font-serif);
-        font-size: 19px;
-        line-height: 1.7;
-        color: var(--color-text);
-        background: var(--color-bg);
-        -webkit-font-smoothing: antialiased;
-      }
-
-      /* Header */
-      header {
-        background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
-        color: white;
-        padding: 4rem var(--side-margin) 5rem;
-        position: relative;
-        overflow: hidden;
-      }
-
-      header::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: radial-gradient(
-            circle at 20% 80%,
-            rgba(196, 18, 48, 0.15) 0%,
-            transparent 50%
-          ),
-          radial-gradient(
-            circle at 80% 20%,
-            rgba(232, 90, 90, 0.1) 0%,
-            transparent 50%
-          );
-        pointer-events: none;
-      }
-
-      .header-content {
-        max-width: var(--max-width);
-        margin: 0 auto;
-        position: relative;
-        z-index: 1;
-      }
-
-      .category-tag {
-        font-family: var(--font-sans);
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        color: var(--color-accent-light);
-        margin-bottom: 1.5rem;
-        display: inline-block;
-      }
-
-      h1 {
-        font-size: clamp(2.2rem, 5vw, 3.2rem);
-        font-weight: 600;
-        line-height: 1.15;
-        margin-bottom: 1.5rem;
-        letter-spacing: -0.02em;
-      }
-
-      .subtitle {
-        font-size: 1.25rem;
-        font-weight: 400;
-        color: rgba(255, 255, 255, 0.75);
-        font-style: italic;
-        max-width: 600px;
-      }
-
-      .meta {
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.6);
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
-      }
-
-      .authors {
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.85);
-      }
-
-      /* Navigation */
-      nav {
-        background: white;
-        border-bottom: 1px solid var(--color-border);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-      }
-
-      .nav-content {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 var(--side-margin);
-        display: flex;
-        gap: 0.25rem;
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-
-      .nav-content::-webkit-scrollbar {
-        display: none;
-      }
-
-      nav a {
-        font-family: var(--font-sans);
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--color-text-muted);
-        text-decoration: none;
-        padding: 1rem 1rem;
-        white-space: nowrap;
-        transition: color 0.2s, border-color 0.2s;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -1px;
-      }
-
-      nav a:hover,
-      nav a.active {
-        color: var(--color-accent);
-        border-bottom-color: var(--color-accent);
-      }
-
-      /* Main Content */
-      main {
-        max-width: var(--max-width);
-        margin: 0 auto;
-        padding: 4rem var(--side-margin);
-      }
-
-      section {
-        margin-bottom: 4rem;
-        scroll-margin-top: 80px;
-      }
-
-      h2 {
-        font-family: var(--font-sans);
-        font-size: 1.6rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 3px solid var(--color-accent);
-        display: inline-block;
-      }
-
-      h3 {
-        font-family: var(--font-sans);
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin: 2rem 0 1rem;
-        color: var(--color-text);
-      }
-
-      h4 {
-        font-family: var(--font-sans);
-        font-size: 1rem;
-        font-weight: 600;
-        margin: 1.5rem 0 0.75rem;
-        color: var(--color-text-muted);
-      }
-
-      p {
-        margin-bottom: 1.25rem;
-      }
-
-      a {
-        color: var(--color-accent);
-        text-decoration: none;
-        border-bottom: 1px solid transparent;
-        transition: border-color 0.2s;
-      }
-
-      a:hover {
-        border-bottom-color: var(--color-accent);
-      }
-
-      /* Key Question Callout */
-      .key-question {
-        background: linear-gradient(
-          135deg,
-          var(--color-bg-alt) 0%,
-          #e8e6e1 100%
-        );
-        border-left: 4px solid var(--color-accent);
-        padding: 1.5rem 2rem;
-        margin: 2rem 0;
-        border-radius: 0 8px 8px 0;
-        font-style: italic;
-        font-size: 1.1rem;
-      }
-
-      .key-question strong {
-        font-style: normal;
-        color: var(--color-accent);
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        display: block;
-        margin-bottom: 0.5rem;
-      }
-
-      /* Hypothesis Box */
-      .hypothesis-box {
-        background: white;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      }
-
-      .hypothesis-box .label {
-        font-family: var(--font-sans);
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--color-accent);
-        margin-bottom: 0.75rem;
-      }
-
-      .hypothesis-box p {
-        margin-bottom: 0;
-      }
-
-      /* Definition Box */
-      .definition {
-        background: #f8f7f5;
-        border: 1px solid #e0ddd8;
-        border-radius: 6px;
-        padding: 1.25rem 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .definition .term {
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .definition p {
-        font-size: 0.95rem;
-        margin-bottom: 0;
-        color: var(--color-text-muted);
-      }
-
-      /* Math Display */
-      .math-block {
-        background: white;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 1.5rem 2rem;
-        margin: 2rem 0;
-        overflow-x: auto;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-      }
-
-      .math-block .caption {
-        font-family: var(--font-sans);
-        font-size: 0.8rem;
-        color: var(--color-text-muted);
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--color-border);
-      }
-
-      /* Figures */
-      figure {
-        margin: 2.5rem 0;
-        background: white;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      }
-
-      figure img {
-        width: 100%;
-        display: block;
-      }
-
-      figcaption {
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-        color: var(--color-text-muted);
-        padding: 1rem 1.5rem;
-        background: var(--color-bg-alt);
-        border-top: 1px solid var(--color-border);
-      }
-
-      figcaption strong {
-        color: var(--color-text);
-      }
-
-      /* Wide figures */
-      .figure-wide {
-        margin-left: calc(-1 * var(--side-margin));
-        margin-right: calc(-1 * var(--side-margin));
-        max-width: calc(100% + 2 * var(--side-margin));
-        border-radius: 0;
-      }
-
-      @media (min-width: 900px) {
-        .figure-wide {
-          margin-left: -80px;
-          margin-right: -80px;
-          max-width: calc(100% + 160px);
-          border-radius: 8px;
-        }
-      }
-
-      /* Grid for multi-panel figures */
-      .figure-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1rem;
-        padding: 1rem;
-        background: #f5f5f5;
-      }
-
-      .figure-grid img {
-        border-radius: 4px;
-        border: 1px solid var(--color-border);
-      }
-
-      /* Lists */
-      ul,
-      ol {
-        margin: 1.25rem 0;
-        padding-left: 1.5rem;
-      }
-
-      li {
-        margin-bottom: 0.5rem;
-      }
-
-      /* Code */
-      code {
-        font-family: var(--font-mono);
-        font-size: 0.85em;
-        background: var(--color-bg-alt);
-        padding: 0.15em 0.4em;
-        border-radius: 4px;
-      }
-
-      pre {
-        background: var(--color-code-bg);
-        color: #abb2bf;
-        padding: 1.5rem;
-        border-radius: 8px;
-        overflow-x: auto;
-        margin: 1.5rem 0;
-      }
-
-      pre code {
-        background: none;
-        padding: 0;
-        color: inherit;
-      }
-
-      /* Table of Contents */
-      .toc {
-        background: white;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        padding: 1.5rem 2rem;
-        margin: 2rem 0;
-      }
-
-      .toc h3 {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin: 0 0 1rem 0;
-        color: var(--color-text-muted);
-      }
-
-      .toc ol {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        counter-reset: toc-counter;
-      }
-
-      .toc li {
-        counter-increment: toc-counter;
-        margin-bottom: 0.5rem;
-      }
-
-      .toc li::before {
-        content: counter(toc-counter) ".";
-        font-family: var(--font-sans);
-        font-weight: 600;
-        color: var(--color-accent);
-        margin-right: 0.5rem;
-      }
-
-      .toc a {
-        color: var(--color-text);
-        border-bottom: none;
-      }
-
-      .toc a:hover {
-        color: var(--color-accent);
-      }
-
-      /* Insight Callout */
-      .insight {
-        background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
-        border: 1px solid #ffc107;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-      }
-
-      .insight::before {
-        content: "💡";
-        font-size: 1.2rem;
-        margin-right: 0.5rem;
-      }
-
-      /* TODO placeholder */
-      .todo {
-        background: #fff0f0;
-        border: 2px dashed #ffaaaa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-        color: #cc0000;
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-      }
-
-      .todo::before {
-        content: "📝 TODO: ";
-        font-weight: 600;
-      }
-
-      /* Citation */
-      .citation {
-        font-size: 0.9rem;
-        color: var(--color-text-muted);
-        background: var(--color-bg-alt);
-        padding: 0.2em 0.5em;
-        border-radius: 4px;
-        white-space: nowrap;
-      }
-
-      /* Footer */
-      footer {
-        background: #1a1a1a;
-        color: rgba(255, 255, 255, 0.6);
-        padding: 3rem var(--side-margin);
-        margin-top: 4rem;
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-      }
-
-      .footer-content {
-        max-width: var(--max-width);
-        margin: 0 auto;
-        text-align: center;
-      }
-
-      /* Responsive */
-      @media (max-width: 600px) {
-        body {
-          font-size: 17px;
-        }
-
-        header {
-          padding: 3rem 1.5rem 4rem;
-        }
-
-        main {
-          padding: 2rem 1.5rem;
-        }
-
-        h2 {
-          font-size: 1.4rem;
-        }
-
-        .math-block {
-          padding: 1rem;
-        }
-      }
-
-      /* Animation */
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      section {
-        animation: fadeInUp 0.6s ease-out;
-      }
-
-      /* Progress indicator */
-      .progress-bar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 3px;
-        background: var(--color-accent);
-        z-index: 1000;
-        transition: width 0.1s;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="progress-bar" id="progress"></div>
-
-    <header>
-      <div class="header-content">
-        <span class="category-tag"
-          >Deep Learning • Representation Learning</span
-        >
-        <h1>Convergent Representations in Neural Networks</h1>
-        <p class="subtitle">
-          Investigating the Platonic Representation Hypothesis through the lens
-          of training dynamics and representational alignment metrics
-        </p>
-        <div class="meta">
-          <span class="authors">Author Name(s)</span> · Graduate Course Final
-          Project · December 2024
-        </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evolution of Representation Space | Platonic Representations</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- MathJax -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <div class="progress-bar" id="progress"></div>
+
+  <header>
+    <div class="header-content">
+      <span class="category-tag">Deep Learning · Representation Learning · Training Dynamics</span>
+      <h1>Evolution of Representation Space: Front and Back</h1>
+      <p class="subtitle">
+        Investigating how neural network representations evolve during training, and what this tells us about the Platonic Representation Hypothesis
+      </p>
+      <div class="meta">
+        <span class="authors">Tony Wu & Baiyu Zhu</span> · Graduate Course Final Project · December 2024
       </div>
-    </header>
+    </div>
+  </header>
 
-    <nav>
-      <div class="nav-content">
-        <a href="#introduction" class="active">Introduction</a>
-        <a href="#research-direction">Research Direction</a>
-        <a href="#methodology">Methodology</a>
-        <a href="#experiments">Experiments</a>
-        <a href="#results">Results</a>
-        <a href="#conclusion">Conclusion</a>
-      </div>
-    </nav>
+  <nav>
+    <div class="nav-content">
+      <a href="#introduction" class="active">Introduction</a>
+      <a href="#formulation">Formulation</a>
+      <a href="#methodology">Methodology</a>
+      <a href="#research-direction">Research Direction</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#results">Results</a>
+      <a href="#refined-hypothesis">Refined Hypothesis</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#references">References</a>
+    </div>
+  </nav>
 
-    <main>
-      <!-- Table of Contents -->
-      <div class="toc">
-        <h3>Contents</h3>
-        <ol>
-          <li><a href="#introduction">Introduction</a></li>
-          <li><a href="#research-direction">Our Direction of Research</a></li>
-          <li><a href="#methodology">Methodology & Metrics</a></li>
-          <li><a href="#experiments">Experiment Setup</a></li>
-          <li><a href="#results">Experiment Results</a></li>
-          <li><a href="#conclusion">Conclusion</a></li>
-        </ol>
+  <main>
+    <div class="toc">
+      <h3>Contents</h3>
+      <ol>
+        <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#formulation">Platonic Representation Formulation</a></li>
+        <li><a href="#methodology">Methodology: Measuring Similarity</a></li>
+        <li><a href="#research-direction">Our Research Direction</a></li>
+        <li><a href="#experiments">Experiment Setup</a></li>
+        <li><a href="#results">Experiment Results</a></li>
+        <li><a href="#refined-hypothesis">Refining the Hypothesis</a></li>
+        <li><a href="#conclusion">Conclusion</a></li>
+        <li><a href="#references">References</a></li>
+      </ol>
+    </div>
+
+    <!-- ==================== INTRODUCTION ==================== -->
+    <section id="introduction">
+      <h2>Introduction</h2>
+
+      <div class="key-question">
+        <strong>The Central Puzzle</strong>
+        Why do neural networks trained on completely different data—text, images, audio—end up learning strikingly similar internal representations?
       </div>
 
-      <!-- INTRODUCTION -->
-      <section id="introduction">
-        <h2>Introduction</h2>
+      <h3>From Many Models to One Foundation</h3>
 
-        <div class="key-question">
-          <strong>Key Question</strong>
-          Do sufficiently capable models converge to a small family of canonical
-          representations?
-        </div>
+      <p>
+        The old paradigm of machine learning was straightforward: different tasks required different models. Image classification used CNNs, language modeling used RNNs, speech recognition had its own architectures. Each domain developed in isolation, with specialized inductive biases baked into the model design.
+      </p>
 
-        <h3>The Platonic Representation Hypothesis</h3>
+      <p>
+        Modern Large Language Models like GPT-4 and Claude shatter this paradigm entirely. A single unified neural network backbone—the <strong>foundation model</strong>—built on the Transformer architecture with shared weights can perform image captioning, text generation, code synthesis, and much more.
+      </p>
 
-        <p>
-          As neural networks have grown in scale and capability, a fascinating
-          pattern has emerged: models trained on vastly different data
-          modalities—text, images, audio—seem to learn increasingly similar
-          internal representations. This observation forms the core of the
-          <strong>Platonic Representation Hypothesis (PRH)</strong>
-          <span class="citation">[Huh et al., 2024]</span>, which posits that
-          there exists a universal statistical structure underlying reality, and
-          that sufficiently capable models will converge toward discovering this
-          structure.
-        </p>
+      <p>
+        Here's what makes this deeply surprising: instead of suffering from the jack-of-all-trades problem, these multimodal models actually <em>perform better</em> than single-modality specialists when trained on large, diverse corpora. Training on both images and text doesn't dilute the model's language understanding—it enhances it.
+      </p>
 
-        <p>
-          The philosophical implications are profound. Just as Plato argued that
-          our perceived reality consists of imperfect shadows of ideal "Forms,"
-          the PRH suggests that different models and modalities are
-          approximating the same underlying reality from different vantage
-          points. As models become more capable, they move closer to this shared
-          representation.
-        </p>
-
-        <h4>Core Assumptions</h4>
-
-        <p>
-          The hypothesis rests on several key assumptions. First, different
-          models learn from different modalities—language models process text,
-          vision models process images, and so forth. Despite these disparate
-          training signals, we expect models that perform well on downstream
-          tasks to develop similar internal representations. The intuition is
-          that the world has a consistent causal structure, and models must
-          capture this structure to make accurate predictions.
-        </p>
-
-        <h3>What is Currently Known Empirically</h3>
-
-        <div class="hypothesis-box">
-          <div class="label">Hypothesis 1: Local Convergence</div>
-          <p>
-            To perform well on multiple tasks, models converge to similar
-            representations <em>locally</em>. The global geometry of the
-            representation space may differ, but local neighborhoods are
-            preserved. This suggests that models agree on which data points are
-            similar, even if they disagree on the global structure.
-          </p>
-        </div>
-
-        <div class="hypothesis-box">
-          <div class="label">Hypothesis 2: Scale Matters</div>
-          <p>
-            Under different datasets and model architectures, the internal
-            representations remain similar
-            <em>if the model is sufficiently large</em>. Smaller models may
-            learn idiosyncratic features, but larger models converge to more
-            universal representations.
-          </p>
-        </div>
-
-        <div class="hypothesis-box">
-          <div class="label">Hypothesis 3: Simplicity Bias</div>
-          <p>
-            Large models exhibit a bias toward simpler representations. This is
-            observed empirically but not yet fully understood theoretically. It
-            suggests that capable models don't just memorize—they compress.
-          </p>
-        </div>
-
-        <div class="todo">
-          Add specific citations for each hypothesis. Include key papers from
-          ICLR/NeurIPS that empirically validate these claims.
-        </div>
-      </section>
-
-      <!-- RESEARCH DIRECTION -->
-      <section id="research-direction">
-        <h2>Our Direction of Research</h2>
-
-        <p>
-          Building on the theoretical framework of the PRH, we investigate
-          specific questions about the <em>dynamics</em> of representation
-          convergence. Rather than comparing final trained models, we examine
-          how representations evolve during training.
-        </p>
-
-        <div class="key-question">
-          <strong>Key Question 1</strong>
-          At what point during training does a model start converging to a
-          global representation?
-        </div>
-
-        <p>
-          This question probes the learning dynamics of neural networks. Do
-          models first learn local features before organizing them into a global
-          structure? Is there a phase transition where the representation
-          suddenly becomes more aligned with a "canonical" representation?
-        </p>
-
-        <div class="key-question">
-          <strong>Key Question 2</strong>
-          Can we capture the phenomenon of grokking through the lens of
-          representation analysis?
-        </div>
-
-        <h3>A Brief Introduction to Grokking</h3>
-
-        <div class="definition">
-          <div class="term">Grokking</div>
-          <p>
-            A phenomenon where neural networks suddenly generalize long after
-            achieving perfect training accuracy. The model appears to "memorize"
-            the training data initially, then undergoes a delayed phase
-            transition to genuine understanding.
-          </p>
-        </div>
-
-        <p>
-          Grokking challenges our understanding of generalization. Standard
-          learning theory suggests generalization should improve monotonically
-          with training. Instead, grokking shows a sharp transition from
-          memorization to generalization, sometimes occurring thousands of steps
-          after the training loss has plateaued.
-        </p>
-
-        <p>
-          We hypothesize that grokking corresponds to a representational phase
-          transition. During the memorization phase, the model learns a complex,
-          data-specific representation. During grokking, the representation
-          simplifies and aligns with a more canonical structure. Our
-          representational metrics should be able to detect this transition.
-        </p>
-
-        <div class="insight">
-          This represents a novel direction: applying representation analysis to
-          study <em>learning dynamics</em> rather than comparing fixed models.
-        </div>
-      </section>
-
-      <!-- METHODOLOGY -->
-      <section id="methodology">
-        <h2>Methodology</h2>
-
-        <p>
-          To compare representations across models and training checkpoints, we
-          need a principled way to measure similarity between high-dimensional
-          spaces. This section develops the mathematical framework from first
-          principles, building intuition at each step.
-        </p>
-
-        <h3>The Core Problem: Comparing Representations</h3>
-
-        <p>
-          Suppose we have two neural networks (or two checkpoints of the same
-          network) that process the same dataset $X = \{x_1, \ldots, x_n\}$. The
-          first network produces representations $f(x_i) \in \mathbb{R}^{d_1}$
-          and the second produces $g(x_i) \in \mathbb{R}^{d_2}$. How do we
-          measure whether these representations capture "the same information"?
-        </p>
-
-        <p>
-          The challenge is that $f$ and $g$ may live in completely different
-          spaces with different dimensions. We cannot directly compare $f(x_i)$
-          to $g(x_i)$. What we <em>can</em> compare is the
-          <strong>geometry</strong> induced by each representation—specifically,
-          which points are similar to which other points.
-        </p>
-
-        <h3>Kernels: Capturing Geometry Through Similarity</h3>
-
-        <p>
-          A <strong>kernel function</strong> $k: \mathbb{R}^d \times
-          \mathbb{R}^d \to \mathbb{R}$ measures similarity between pairs of
-          points. For a representation $f$ and dataset $X$, we construct the
-          <strong>kernel matrix</strong> (also called Gram matrix):
-        </p>
-
-        <div class="math-block">
-          $$K_{ij} = k(f(x_i), f(x_j))$$
-          <div class="caption">
-            Each entry measures the similarity between representations of points
-            $i$ and $j$. The matrix $K$ is symmetric and positive semi-definite.
-          </div>
-        </div>
-
-        <p>Common kernel choices include:</p>
-
-        <ul>
-          <li>
-            <strong>Linear kernel:</strong> $k(a, b) = a^\top b$ — measures
-            cosine similarity (when centered)
-          </li>
-          <li>
-            <strong>RBF kernel:</strong> $k(a, b) = \exp(-\|a - b\|^2 /
-            2\sigma^2)$ — measures locality with bandwidth $\sigma$
-          </li>
-        </ul>
-
-        <p>
-          The key insight is that
-          <strong
-            >the kernel matrix fully encodes the geometry of the representation
-            space</strong
-          >
-          (up to the information captured by the chosen kernel). Two
-          representations that induce the same kernel matrix are geometrically
-          equivalent for our purposes.
-        </p>
-
-        <h3>The Question of Independence</h3>
-
-        <p>
-          Now we can reformulate our problem: given kernel matrices $K$ (from
-          representation $f$) and $L$ (from representation $g$), how do we
-          measure their similarity? One elegant approach comes from asking the
-          <em>opposite</em> question: how do we measure whether two random
-          variables are <strong>independent</strong>?
-        </p>
-
-        <p>
-          If the geometries captured by $K$ and $L$ were independent
-          (unrelated), knowing the similarity structure from $K$ would tell us
-          nothing about the similarity structure from $L$. High dependence
-          between $K$ and $L$ means the representations capture related
-          information.
-        </p>
-
-        <h3>HSIC: The Hilbert-Schmidt Independence Criterion</h3>
-
-        <h4>Why HSIC? The Intuition</h4>
-
-        <p>
-          Classical measures of dependence like correlation only capture
-          <em>linear</em> relationships. Two variables can have zero correlation
-          but still be highly dependent (e.g., $Y = X^2$). We need a measure
-          that captures <em>all</em> forms of dependence.
-        </p>
-
-        <p>
-          HSIC achieves this by embedding distributions into a
-          <strong>Reproducing Kernel Hilbert Space (RKHS)</strong>, where
-          dependence can be fully characterized. The key theorem (Gretton et
-          al., 2005) states:
-        </p>
-
-        <div class="hypothesis-box">
-          <div class="label">Theorem: HSIC and Independence</div>
-          <p>
-            For characteristic kernels (including RBF and linear kernels on
-            bounded domains), $\text{HSIC}(X, Y) = 0$ if and only if $X$ and $Y$
-            are independent.
-          </p>
-        </div>
-
-        <p>
-          This is powerful: HSIC is zero <em>exactly when</em> the variables are
-          independent, capturing all forms of dependence, not just linear ones.
-        </p>
-
-        <h4>Formal Definition of HSIC</h4>
-
-        <p>
-          Let $(X, Y)$ be random variables with joint distribution $P_{XY}$ and
-          marginals $P_X$, $P_Y$. Let $k$ and $l$ be kernels on the domains of
-          $X$ and $Y$ respectively. The population HSIC is:
-        </p>
-
-        <div class="math-block">
-          $$\text{HSIC}(X, Y) = \mathbb{E}_{x,x',y,y'}[k(x,x')l(y,y')] -
-          2\mathbb{E}_{x,x',y,y'}[k(x,x')l(y,y')] +
-          \mathbb{E}_{x,x'}[k(x,x')]\mathbb{E}_{y,y'}[l(y,y')]$$
-        </div>
-
-        <p>
-          This looks complicated, but it has a beautiful interpretation. Let's
-          build to it step by step.
-        </p>
-
-        <h4>HSIC as Covariance of Kernel Evaluations</h4>
-
-        <p>
-          Recall that the covariance between two random variables $A$ and $B$
-          is:
-        </p>
-
-        <div class="math-block">
-          $$\text{Cov}(A, B) = \mathbb{E}[AB] - \mathbb{E}[A]\mathbb{E}[B]$$
-          <div class="caption">
-            Covariance measures how much $A$ and $B$ vary together. If $A$ is
-            high when $B$ is high (and low when $B$ is low), covariance is
-            positive.
-          </div>
-        </div>
-
-        <p>
-          Now consider the random variable $k(x, x')$ where $x, x'$ are
-          independent draws from $P_X$. This measures "how similar are two
-          random points under kernel $k$?" Similarly, $l(y, y')$ measures
-          similarity under kernel $l$.
-        </p>
-
-        <p>
-          <strong>Key insight:</strong> HSIC is exactly the covariance of these
-          kernel evaluations, but under a specific sampling scheme:
-        </p>
-
-        <div class="math-block">
-          $$\text{HSIC}(X, Y) = \text{Cov}_{(x,y), (x',y') \sim P_{XY}}[k(x,
-          x'), l(y, y')]$$
-          <div class="caption">
-            We draw pairs $(x, y)$ and $(x', y')$ from the
-            <em>joint</em> distribution, then ask: does knowing that $x$ and
-            $x'$ are similar (high $k(x,x')$) tell us anything about whether $y$
-            and $y'$ are similar (high $l(y,y')$)?
-          </div>
-        </div>
-
-        <p>
-          <strong>Intuition:</strong> If $X$ and $Y$ are dependent, then similar
-          $x$-values should co-occur with similar $y$-values. When $k(x, x')$ is
-          high, $l(y, y')$ should also tend to be high (or both low together).
-          This creates positive covariance. If $X$ and $Y$ are independent,
-          there's no such relationship, and the covariance is zero.
-        </p>
-
-        <h4>The Empirical HSIC Estimator</h4>
-
-        <p>
-          Given $n$ samples $\{(x_i, y_i)\}_{i=1}^n$, we can estimate HSIC using
-          the kernel matrices $K_{ij} = k(x_i, x_j)$ and $L_{ij} = l(y_i, y_j)$.
-          The estimator is:
-        </p>
-
-        <div class="math-block">
-          $$\widehat{\text{HSIC}}(K, L) = \frac{1}{(n-1)^2} \text{tr}(KHLH)$$
-          <div class="caption">
-            Where $H = I_n - \frac{1}{n}\mathbf{1}\mathbf{1}^\top$ is the
-            <strong>centering matrix</strong>. This is a biased but consistent
-            estimator.
-          </div>
-        </div>
-
-        <h4>Deriving the Empirical Estimator</h4>
-
-        <p>
-          Let's derive this formula to understand where it comes from. We want
-          to estimate:
-        </p>
-
-        <div class="math-block">
-          $$\text{HSIC} = \mathbb{E}[k(x,x')l(y,y')] -
-          2\mathbb{E}_{x,y}\mathbb{E}_{x',y'}[k(x,x')l(y,y')] +
-          \mathbb{E}[k(x,x')]\mathbb{E}[l(y,y')]$$
-        </div>
-
-        <p>
-          <strong>Step 1: Centering.</strong> Define the centered kernel matrix
-          $\tilde{K} = HKH$. What does centering do? For any matrix $M$:
-        </p>
-
-        <div class="math-block">
-          $$(HMH)_{ij} = M_{ij} - \frac{1}{n}\sum_k M_{ik} - \frac{1}{n}\sum_k
-          M_{kj} + \frac{1}{n^2}\sum_{k,l} M_{kl}$$
-          <div class="caption">
-            Centering removes the row means, column means, and adds back the
-            global mean. This is analogous to centering a random variable by
-            subtracting its mean.
-          </div>
-        </div>
-
-        <p>
-          <strong>Step 2: Trace as inner product.</strong> For matrices $A$ and
-          $B$, $\text{tr}(A^\top B) = \sum_{ij} A_{ij} B_{ij}$ is the Frobenius
-          inner product. Since kernel matrices are symmetric:
-        </p>
-
-        <div class="math-block">
-          $$\text{tr}(KHLH) = \text{tr}(\tilde{K}\tilde{L}) = \sum_{i,j}
-          \tilde{K}_{ij} \tilde{L}_{ij}$$
-          <div class="caption">
-            This sums the element-wise products of the centered kernel matrices.
-          </div>
-        </div>
-
-        <p>
-          <strong>Step 3: Connection to covariance.</strong> The centering
-          operation handles the "subtract the means" part of covariance. Each
-          term $\tilde{K}_{ij} \tilde{L}_{ij}$ contributes to measuring whether
-          high kernel similarity in $K$ coincides with high kernel similarity in
-          $L$. Summing over all pairs and normalizing by $(n-1)^2$ gives us the
-          covariance estimate.
-        </p>
-
-        <div class="insight">
-          The formula $\text{tr}(KHLH)/(n-1)^2$ is computing: "On average, when
-          two points have higher-than-expected similarity in representation $K$,
-          do they also have higher-than-expected similarity in representation
-          $L$?"
-        </div>
-
-        <h4>An Even More Explicit Formulation</h4>
-
-        <p>
-          We can expand the empirical HSIC into an explicit sum that makes the
-          covariance interpretation crystal clear:
-        </p>
-
-        <div class="math-block">
-          $$\widehat{\text{HSIC}} = \frac{1}{n^2}\sum_{i,j} K_{ij}L_{ij} +
-          \frac{1}{n^4}\sum_{i,j,p,q} K_{ij}L_{pq} - \frac{2}{n^3}\sum_{i,j,q}
-          K_{ij}L_{jq}$$
-          <div class="caption">
-            Term 1: Average of products $K_{ij}L_{ij}$ (joint similarity).<br />
-            Term 2: Product of averages (baseline under independence).<br />
-            Term 3: Cross term correcting for marginal structure.
-          </div>
-        </div>
-
-        <p>
-          This exactly mirrors the covariance formula $\mathbb{E}[AB] -
-          \mathbb{E}[A]\mathbb{E}[B]$, with corrections for finite-sample
-          effects.
-        </p>
-
-        <h3>From HSIC to CKA: Normalization</h3>
-
-        <p>
-          HSIC measures dependence, but its magnitude depends on the scale of
-          the kernels. To compare across different representations, we need a
-          normalized measure. Enter
-          <strong>Centered Kernel Alignment (CKA)</strong>.
-        </p>
-
-        <h4>The Normalization Idea</h4>
-
-        <p>
-          Recall that for regular correlation, we normalize covariance by the
-          standard deviations:
-        </p>
-
-        <div class="math-block">
-          $$\text{Corr}(A, B) = \frac{\text{Cov}(A, B)}{\sqrt{\text{Var}(A)
-          \cdot \text{Var}(B)}}$$
-        </div>
-
-        <p>
-          We do the same for HSIC. Note that $\text{HSIC}(K, K)$ measures the
-          "self-dependence" of $K$—analogous to variance. So we define:
-        </p>
-
-        <div class="math-block">
-          $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K)
-          \cdot \text{HSIC}(L, L)}}$$
-          <div class="caption">
-            CKA is bounded between 0 and 1. CKA = 1 means perfect alignment; CKA
-            = 0 means independence (no shared structure).
-          </div>
-        </div>
-
-        <h4>CKA as Cosine Similarity</h4>
-
-        <p>
-          There's another way to see CKA. Let $\tilde{K} = HKH$ be the centered
-          kernel matrix, and flatten it into a vector $\text{vec}(\tilde{K}) \in
-          \mathbb{R}^{n^2}$. Then:
-        </p>
-
-        <div class="math-block">
-          $$\text{CKA}(K, L) = \frac{\langle \text{vec}(\tilde{K}),
-          \text{vec}(\tilde{L}) \rangle}{\|\text{vec}(\tilde{K})\| \cdot
-          \|\text{vec}(\tilde{L})\|} = \cos\theta$$
-          <div class="caption">
-            CKA is the cosine of the angle between centered kernel matrices
-            (viewed as vectors). This gives geometric intuition: CKA measures
-            alignment in the space of similarity structures.
-          </div>
-        </div>
-
-        <h4>Invariance Properties of CKA</h4>
-
-        <p>CKA with a linear kernel has useful invariance properties:</p>
-
-        <ul>
-          <li>
-            <strong>Orthogonal invariance:</strong> If $f'(x) = Qf(x)$ for
-            orthogonal $Q$, then $\text{CKA}(K_f, K_{f'}) = 1$. Rotations and
-            reflections don't change similarity structure.
-          </li>
-          <li>
-            <strong>Isotropic scaling:</strong> If $f'(x) = cf(x)$, CKA is
-            unchanged. Scaling all representations equally doesn't affect
-            relative similarities.
-          </li>
-        </ul>
-
-        <p>
-          These invariances are desirable: we care about the
-          <em>structure</em> of representations, not arbitrary choices of basis
-          or scale.
-        </p>
-
-        <h3>The Problem with CKA: Global Domination</h3>
-
-        <p>
-          Despite its elegance, CKA has a critical flaw for our purposes.
-          Because it computes similarity over <em>all</em> pairs of points, CKA
-          is dominated by <strong>global structure</strong>—particularly the
-          largest principal components.
-        </p>
-
-        <h4>Why This Matters</h4>
-
-        <p>
-          Consider two representations that organize data into the same global
-          clusters but differ in fine-grained local structure. CKA will report
-          high similarity because the large-scale structure dominates the sum.
-          But local structure often matters more for downstream tasks—knowing
-          which specific points are most similar to a query is crucial for
-          retrieval, few-shot learning, and more.
-        </p>
-
-        <p>
-          Mathematically, in the expression $\sum_{i,j} \tilde{K}_{ij}
-          \tilde{L}_{ij}$, pairs with large kernel values (distant or very
-          similar points creating extreme values) contribute more than pairs
-          with moderate values (local neighborhoods).
-        </p>
-
-        <h3>CKNNA: Focusing on Local Structure</h3>
-
-        <p>
-          <strong>Centered Kernel Nearest Neighbor Alignment (CKNNA)</strong>
-          addresses this by restricting the comparison to local neighborhoods.
-        </p>
-
-        <h4>Mutual k-Nearest Neighbors</h4>
-
-        <div class="definition">
-          <div class="term">Definition: Mutual k-NN</div>
-          <p>
-            Points $i$ and $j$ are
-            <strong>mutual k-nearest neighbors</strong> in representation $f$
-            if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is
-            among the $k$ closest points to $j$.
-          </p>
-        </div>
-
-        <p>
-          The mutual requirement makes the relationship symmetric and robust. A
-          point might be in many others' neighborhoods (a "hub"), but mutual
-          k-NN ensures both points consider each other close.
-        </p>
-
-        <h4>The CKNNA Formula</h4>
-
-        <p>
-          Let $M_k \in \{0, 1\}^{n \times n}$ be the
-          <strong>mutual k-NN mask</strong> computed from the final (reference)
-          representation:
-        </p>
-
-        <div class="math-block">
-          $$(M_k)_{ij} = \begin{cases} 1 & \text{if } i \text{ and } j \text{
-          are mutual } k\text{-NN} \\ 0 & \text{otherwise} \end{cases}$$
-        </div>
-
-        <p>
-          CKNNA applies this mask to both kernel matrices before computing CKA:
-        </p>
-
-        <div class="math-block">
-          $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
-          <div class="caption">
-            Where $\odot$ denotes element-wise (Hadamard) product. Only pairs
-            that are mutual k-NN in the reference representation contribute to
-            the similarity measure.
-          </div>
-        </div>
-
-        <h4>Why CKNNA Works</h4>
-
-        <p>
-          By zeroing out non-local pairs, CKNNA asks a more focused question:
-          <em
-            >"Do the representations agree on the similarity structure within
-            local neighborhoods?"</em
-          >
-        </p>
-
-        <ul>
-          <li>
-            <strong>Local focus:</strong> Only the ~$nk$ local pairs contribute
-            (out of $n^2$ total), emphasizing fine-grained structure.
-          </li>
-          <li>
-            <strong>Robustness to global changes:</strong> If the global
-            geometry changes but local neighborhoods are preserved, CKNNA
-            remains high while CKA drops.
-          </li>
-          <li>
-            <strong>Outlier resistance:</strong> Outliers are rarely mutual k-NN
-            with many points, so they have limited influence.
-          </li>
-        </ul>
-
-        <h4>Choosing k</h4>
-
-        <p>The parameter $k$ controls the locality of the comparison:</p>
-
-        <ul>
-          <li>
-            <strong>Small $k$ (e.g., 1-5):</strong> Very local, may be noisy due
-            to small sample size per neighborhood.
-          </li>
-          <li>
-            <strong>Large $k$ (e.g., $n/2$):</strong> Approaches global
-            comparison, losing the local focus.
-          </li>
-          <li>
-            <strong>Moderate $k$ (e.g., 16):</strong> Balances locality with
-            statistical stability.
-          </li>
-        </ul>
-
-        <div class="insight">
-          We use $k = 16$ throughout our experiments. This captures
-          neighborhoods large enough to be statistically meaningful but small
-          enough to reflect genuinely local structure. For a dataset with ~150
-          points, this means each point's neighborhood contains about 10% of the
-          data.
-        </div>
-
-        <h3>Summary: The Metric Pipeline</h3>
-
-        <p>Our methodology can be summarized as the following pipeline:</p>
-
-        <ol>
-          <li>
-            <strong>Extract representations:</strong> For input data $X$, obtain
-            $f(X)$ and $g(X)$ from two models/checkpoints.
-          </li>
-          <li>
-            <strong>Compute kernel matrices:</strong> $K_{ij} = f(x_i)^\top
-            f(x_j)$ and $L_{ij} = g(x_i)^\top g(x_j)$ using linear kernel.
-          </li>
-          <li>
-            <strong>Compute CKA:</strong> Center both matrices and compute their
-            normalized inner product. This measures global alignment.
-          </li>
-          <li>
-            <strong>Compute mutual k-NN mask:</strong> From the reference
-            representation $L$, identify mutual k-NN pairs.
-          </li>
-          <li>
-            <strong>Compute CKNNA:</strong> Apply the mask and recompute CKA on
-            the masked matrices. This measures local alignment.
-          </li>
-        </ol>
-
-        <p>
-          By comparing CKA and CKNNA, we can distinguish between changes in
-          global structure (CKA drops, CKNNA stable) and changes in local
-          structure (both drop).
-        </p>
-      </section>
-
-      <!-- EXPERIMENTS -->
-      <section id="experiments">
-        <h2>Experiment Setup</h2>
-
-        <h3>Model: Pythia</h3>
-
-        <p>
-          We use the <strong>Pythia</strong> suite of language models
-          <span class="citation">[Biderman et al., 2023]</span>, which provides
-          a unique resource for studying training dynamics. Unlike most released
-          models, Pythia includes checkpoints saved throughout training,
-          allowing us to analyze how representations evolve.
-        </p>
-
-        <p>Key properties of Pythia that make it ideal for our study:</p>
-
-        <ul>
-          <li>
-            <strong>Multiple scales:</strong> Models range from 70M to 12B
-            parameters, enabling us to test how scale affects representation
-            convergence.
-          </li>
-          <li>
-            <strong>Consistent training:</strong> All models trained on the same
-            data (The Pile) with the same hyperparameters (relative to scale),
-            isolating the effect of model size.
-          </li>
-          <li>
-            <strong>Dense checkpoints:</strong> Checkpoints available at steps
-            0, 1, 2, 4, 8, 16, ..., 143,000, providing fine-grained visibility
-            into training dynamics.
-          </li>
-        </ul>
-
-        <h3>Experimental Protocol</h3>
-
-        <p>Our experiments follow a consistent protocol:</p>
-
-        <ol>
-          <li>
-            <strong>Select checkpoints:</strong> We compare representations at
-            checkpoint $t$ against the final checkpoint to measure convergence.
-          </li>
-          <li>
-            <strong>Extract representations:</strong> For a fixed set of input
-            examples, extract the hidden states at each layer.
-          </li>
-          <li>
-            <strong>Compute kernel matrices:</strong> Using linear kernel,
-            compute pairwise similarity matrices $K_t$ and $K_{\text{final}}$.
-          </li>
-          <li>
-            <strong>Compute alignment:</strong> Calculate both CKA and CKNNA
-            (with $k=16$) between $K_t$ and $K_{\text{final}}$.
-          </li>
-        </ol>
-
-        <div class="todo">
-          Add details about: which layers analyzed, number of examples used,
-          specific Pythia model sizes, and any preprocessing of activations.
-        </div>
-      </section>
-
-      <!-- RESULTS -->
-      <section id="results">
-        <h2>Experiment Results</h2>
-
-        <h3>Representation Convergence During Training</h3>
-
-        <p>
-          Our first set of experiments examines how representation alignment
-          evolves throughout training. We compare each checkpoint's
-          representation against the final trained model.
-        </p>
-
-        <figure class="figure-wide">
-          <img
-            src="Unknown-10.png"
-            alt="Representation convergence analysis showing CKA and CKNNA metrics over training steps"
-          />
-          <figcaption>
-            <strong
-              >Figure 1: Representation Convergence with CKA and CKNNA.</strong
-            >
-            Both metrics are plotted against training step count. Notice the
-            striking difference in behavior: CKNNA (orange) starts high (~0.995)
-            and remains relatively stable, while CKA (blue) shows a dramatic
-            non-monotonic pattern. CKA initially rises, then drops sharply
-            around step 20,000, reaching a minimum around step 40,000, before
-            recovering. This suggests that global structure undergoes
-            significant reorganization mid-training, while local structure
-            (captured by CKNNA) remains relatively preserved.
-          </figcaption>
-        </figure>
-
-        <h4>Interpreting the Divergence Between CKA and CKNNA</h4>
-
-        <p>
-          The dramatic difference between CKA and CKNNA reveals something
-          profound about the learning dynamics. Around step 20,000-40,000, the
-          model undergoes what appears to be a
-          <strong>global reorganization</strong> of its representation space:
-        </p>
-
-        <ul>
-          <li>
-            <strong>Local structure preserved:</strong> CKNNA remains above
-            0.995 throughout, indicating that the model consistently identifies
-            which data points are similar to each other.
-          </li>
-          <li>
-            <strong>Global structure reorganized:</strong> CKA drops to ~0.982,
-            suggesting the overall geometry of the representation space is being
-            restructured.
-          </li>
-          <li>
-            <strong>Eventual convergence:</strong> Both metrics converge to ~1.0
-            by the end of training, confirming that the final representation is
-            stable.
-          </li>
-        </ul>
-
-        <div class="insight">
-          This pattern is consistent with a learning process where the model
-          first establishes local relationships (which points are similar), then
-          reorganizes the global structure (how clusters relate to each other),
-          and finally converges to a stable representation.
-        </div>
-
-        <h3>Detailed Analysis: Checkpoint Comparison</h3>
-
-        <p>
-          To understand what drives the CKA drop, we examine the kernel matrices
-          at two key checkpoints: early training (step 256) and mid-training
-          (step 4000).
-        </p>
-
-        <figure class="figure-wide">
-          <img
-            src="Unknown-11.png"
-            alt="Detailed kernel analysis at checkpoint 256"
-          />
-          <figcaption>
-            <strong>Figure 2: Kernel Analysis at Checkpoint 256.</strong>
-            <strong>Top row:</strong> Kernel matrices K (checkpoint 256), L
-            (final checkpoint), and mutual kNN mask (k=16).
-            <strong>Bottom row:</strong> Scatter plots of local pairs (r=0.995)
-            and global pairs (r=0.965), plus the absolute difference |K-L|. The
-            high local correlation (0.995) vs. lower global correlation (0.965)
-            explains why CKNNA > CKA: local neighborhoods are highly aligned,
-            but global structure shows more divergence.
-          </figcaption>
-        </figure>
-
-        <figure class="figure-wide">
-          <img
-            src="Unknown-12.png"
-            alt="Detailed kernel analysis at checkpoint 4000"
-          />
-          <figcaption>
-            <strong>Figure 3: Kernel Analysis at Checkpoint 4000.</strong>
-            Same analysis as Figure 2 but at step 4000. Notice the global pairs
-            correlation has improved to 0.980, while local pairs remain at
-            0.994. The |K-L| difference map shows similar structure to
-            checkpoint 256, but with generally smaller magnitudes. The model is
-            converging toward the final representation, with global structure
-            catching up to local structure.
-          </figcaption>
-        </figure>
-
-        <h3>Layer-Specific Analysis</h3>
-
-        <p>
-          The Platonic Representation Hypothesis suggests that later layers
-          should show stronger convergence, as they contain more abstract,
-          task-relevant representations. We test this by analyzing convergence
-          at different layers.
-        </p>
-
-        <figure class="figure-wide">
-          <img
-            src="Unknown-13.png"
-            alt="Representation convergence at layer 12"
-          />
-          <figcaption>
-            <strong>Figure 4: Convergence Analysis at Layer 12.</strong>
-            The same CKA/CKNNA analysis at a middle layer shows qualitatively
-            similar dynamics but with some key differences. The CKA dip is less
-            pronounced, and both metrics converge more quickly. This suggests
-            that mid-layer representations stabilize earlier in training than
-            final-layer representations.
-          </figcaption>
-        </figure>
-
-        <div class="todo">
-          Run experiments across all layers and create a comprehensive
-          layer-by-layer analysis. Include experiments with different model
-          sizes (70M, 410M, 1.4B, etc.) to test scale effects.
-        </div>
-
-        <h3>Cross-Model Comparison</h3>
-
-        <div class="todo">
-          Run CKA and CKNNA comparison across Pythia models of different sizes.
-          Hypothesis: larger models should show higher alignment with each other
-          than smaller models, supporting the PRH claim that scale leads to
-          convergent representations.
-        </div>
-
-        <h3>Observations on Grokking</h3>
-
-        <p>
-          The non-monotonic behavior of CKA during training is reminiscent of
-          grokking dynamics. The pattern suggests:
-        </p>
-
-        <ol>
-          <li>
-            <strong>Initial learning phase</strong> (steps 0-15k): Rapid
-            improvement in both local and global alignment.
-          </li>
-          <li>
-            <strong>Reorganization phase</strong> (steps 20k-50k): Global
-            structure is reorganized while local structure is preserved. This
-            may correspond to a transition from memorization to generalization.
-          </li>
-          <li>
-            <strong>Convergence phase</strong> (steps 50k+): Both metrics
-            converge toward 1.0 as the representation stabilizes.
-          </li>
-        </ol>
-
-        <div class="insight">
-          The preservation of local structure during global reorganization
-          suggests that the model maintains useful learned features while
-          restructuring how they relate to each other—a signature of learning
-          more efficient, generalizable representations.
-        </div>
-      </section>
-
-      <!-- CONCLUSION -->
-      <section id="conclusion">
-        <h2>Conclusion</h2>
-
-        <h3>Key Findings</h3>
-
-        <p>
-          Our experiments reveal several important insights about
-          representational dynamics during neural network training:
-        </p>
-
-        <ol>
-          <li>
-            <strong>Local before global:</strong> Models establish local
-            similarity structure early in training, while global geometry
-            continues to evolve. This supports the PRH's emphasis on local
-            alignment as a key feature of convergent representations.
-          </li>
-          <li>
-            <strong>Non-monotonic convergence:</strong> Representation alignment
-            is not monotonic—there is a distinct reorganization phase where
-            global structure changes significantly while local structure is
-            preserved.
-          </li>
-          <li>
-            <strong>Metric matters:</strong> CKA and CKNNA capture different
-            aspects of representational similarity. CKNNA's focus on local
-            neighborhoods makes it more robust and reveals consistent alignment
-            that CKA misses during the reorganization phase.
-          </li>
-        </ol>
-
-        <h3>Novel Contributions</h3>
-
-        <ul>
-          <li>
-            <strong>Training dynamics perspective:</strong> We apply
-            representation analysis to study learning dynamics, not just compare
-            trained models. This reveals structure in how representations evolve
-            that static comparisons miss.
-          </li>
-          <li>
-            <strong>Connection to grokking:</strong> The non-monotonic alignment
-            pattern suggests a connection between representation reorganization
-            and generalization transitions, opening new avenues for
-            understanding grokking.
-          </li>
-        </ul>
-
-        <h3>Future Directions</h3>
-
-        <ul>
-          <li>
-            Systematic study across model scales to quantify how size affects
-            convergence rate and final alignment.
-          </li>
-          <li>
-            Explicit grokking experiments on algorithmic tasks to validate the
-            connection between representation metrics and generalization.
-          </li>
-          <li>
-            Cross-modal analysis to test whether vision and language models show
-            similar convergence patterns.
-          </li>
-          <li>
-            Theoretical analysis of why local structure is preserved during
-            global reorganization.
-          </li>
-        </ul>
-
-        <div class="todo">
-          Finalize conclusions based on complete experimental results. Add
-          reflection on limitations and how they affect interpretation.
-        </div>
-      </section>
-
-      <!-- References -->
-      <section id="references">
-        <h2>References</h2>
-
-        <div class="todo">
-          Add full bibliography with:
-          <ul>
-            <li>Huh et al. (2024) - Platonic Representation Hypothesis</li>
-            <li>Biderman et al. (2023) - Pythia</li>
-            <li>Kornblith et al. (2019) - CKA</li>
-            <li>Power et al. (2022) - Grokking</li>
-            <li>Additional papers on HSIC, representation learning, etc.</li>
-          </ul>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="footer-content">
-        <p>Graduate Course Project · 2024</p>
+      <div class="insight">
+        This observation points to something profound: there may exist a <strong>unified representation</strong> of different modalities that captures the same underlying objects and concepts. Images of cats and descriptions of cats might converge to similar internal codes.
       </div>
-    </footer>
 
-    <script>
-      // Progress bar
-      window.addEventListener("scroll", () => {
-        const winScroll =
-          document.body.scrollTop || document.documentElement.scrollTop;
-        const height =
-          document.documentElement.scrollHeight -
-          document.documentElement.clientHeight;
-        const scrolled = (winScroll / height) * 100;
-        document.getElementById("progress").style.width = scrolled + "%";
+      <h3>The Platonic Representation Hypothesis</h3>
+
+      <p>
+        To explain this phenomenon, Huh et al. introduced the <strong>Platonic Representation Hypothesis (PRH)</strong>. The philosophical reference is deliberate and illuminating.
+      </p>
+
+      <div class="analogy">
+        <strong>Plato's Cave Allegory:</strong> Prisoners in a cave see only shadows on a wall, cast by objects passing before a fire. The shadows are imperfect projections of true Forms that exist in an idealized realm. Similarly, word descriptions and image pixels are merely <em>shadows</em> of the true objects they represent—partial, noisy observations of an underlying reality.
+      </div>
+
+      <p>
+        The PRH formalizes this intuition: there exists an idealized statistical model $P(z)$ that governs events in our universe. Every observation we make—whether through language, vision, or any other modality—provides only partial information about these latent objects $z$. A sufficiently capable model, trained to predict these observations accurately, must discover structure in the underlying $z$ itself.
+      </p>
+
+      <h3>Why Does Convergence Happen?</h3>
+
+      <p>
+        The original PRH paper proposed three complementary mechanisms driving representation convergence:
+      </p>
+
+      <div class="hypothesis-box">
+        <div class="label">Hypothesis 1: Convergence via Task Generality</div>
+        <p>
+          As we increase the number of data points and tasks, the constraints on the model multiply. To perform well across a massive, diverse dataset, the model's hypothesis space shrinks dramatically.
+        </p>
+      </div>
+
+      <div class="hypothesis-box">
+        <div class="label">Hypothesis 2: Convergence via Model Capacity</div>
+        <p>
+          Larger models have the capacity to discover more optimal solutions. A small model might settle for a hacky shortcut. A large model can find the elegant, generalizable solution that aligns with reality itself.
+        </p>
+      </div>
+
+      <div class="hypothesis-box">
+        <div class="label">Hypothesis 3: The Simplicity Bias</div>
+        <p>
+          Larger models tend to find <em>simpler</em> solutions, even though they have capacity for more complex ones. Perhaps the optimization landscape of larger models favors smooth, compressible representations.
+        </p>
+      </div>
+
+      <h3>Connecting to the Structure of Representations</h3>
+
+      <p>
+        The ML community has long accepted that <strong>directions in representation space encode semantic meaning</strong>. The famous example: $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$ suggests that gender is encoded as a consistent direction.
+      </p>
+
+      <p>
+        Recent work from Anthropic using <strong>Sparse Autoencoders (SAEs)</strong> reveals a richer picture. The representation space has structure at multiple scales:
+      </p>
+
+      <ul>
+        <li><strong>Atomic scale:</strong> Local crystal-like structures with parallelogram faces.</li>
+        <li><strong>Intermediate scale:</strong> Neurons that fire to similar concepts cluster together in lobes, reminiscent of brain structure.</li>
+        <li><strong>Galaxy scale:</strong> Global organization of these clusters into larger patterns.</li>
+      </ul>
+
+      <h3>Our Contribution: The Dynamics of Convergence</h3>
+
+      <p>
+        Prior work on the PRH has focused on comparing <em>final trained models</em>. But this leaves out a crucial dimension: <strong>how</strong> do representations evolve during training to reach convergence?
+      </p>
+
+      <p>
+        In this work, we investigate the <em>dynamics</em> of representation convergence. We ask: At what point during training does alignment happen? Are there distinct phases—perhaps resembling <em>grokking</em>? Do different layers converge at different rates?
+      </p>
+    </section>
+
+    <!-- ==================== FORMULATION ==================== -->
+    <section id="formulation">
+      <h2>Platonic Representation Formulation</h2>
+
+      <p>
+        Before we can measure whether representations are converging, we need precise mathematical language for what a "representation" even is, and how to compare two of them.
+      </p>
+
+      <h3>What Is a Representation?</h3>
+
+      <p>
+        A neural network transforms raw inputs into internal codes. Formally, a <strong>vector representation</strong> of an input $x \in \mathcal{X}$ is a mapping from the data space to a target vector space:
+      </p>
+
+      <div class="math-block">
+        $$f: \mathcal{X} \rightarrow \mathbb{R}^n$$
+        <div class="caption">
+          The function $f$ takes any input and produces an $n$-dimensional vector—the model's internal "understanding" of that input.
+        </div>
+      </div>
+
+      <h3>The Problem: How to Compare Different Spaces?</h3>
+
+      <p>
+        Here's the fundamental challenge: if model A produces 768-dimensional representations and model B produces 1024-dimensional representations, we can't directly compare their vectors. Even with the same dimension, the axes might mean completely different things.
+      </p>
+
+      <div class="insight">
+        The key insight: we don't care about the <em>absolute</em> representation of any single point. We care about <strong>relationships between points</strong>. If two models agree that "cat" is similar to "dog" but distant from "democracy," they've captured something in common.
+      </div>
+
+      <h3>Kernels: Measuring Similarity Structure</h3>
+
+      <p>
+        A <strong>kernel function</strong> measures similarity between representations:
+      </p>
+
+      <div class="math-block">
+        $$\mathcal{K}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}, \quad \mathcal{K}(x_i, x_j) = \langle f(x_i), f(x_j) \rangle$$
+        <div class="caption">
+          The kernel $\mathcal{K}(x_i, x_j)$ computes the inner product between representations. High values mean the model considers these inputs similar.
+        </div>
+      </div>
+
+      <p>
+        For a dataset of $n$ points, we organize all pairwise similarities into a <strong>kernel matrix</strong> $K \in \mathbb{R}^{n \times n}$ where $K_{ij} = \mathcal{K}(x_i, x_j)$.
+      </p>
+
+      <div class="analogy">
+        <strong>Intuition:</strong> The kernel matrix is like a social network where edge weights indicate how much two people have in common. Two models might organize their coordinates differently, but if their "social graphs" are similar, they've learned similar structure.
+      </div>
+
+      <h3>The Right Invariances</h3>
+
+      <p>
+        A good similarity metric should be invariant under:
+      </p>
+
+      <ul>
+        <li><strong>Orthogonal transformations:</strong> Rotations and reflections shouldn't change similarity.</li>
+        <li><strong>Isotropic scaling:</strong> Multiplying all representations by a constant shouldn't matter.</li>
+      </ul>
+
+      <p>
+        This leads us to <strong>Centered Kernel Alignment (CKA)</strong> as our primary metric.
+      </p>
+    </section>
+
+    <!-- ==================== METHODOLOGY ==================== -->
+    <section id="methodology">
+      <h2>Methodology: Measuring Representational Similarity</h2>
+
+      <p>
+        How do we quantify whether two representations capture "the same information"? This section develops the mathematical machinery.
+      </p>
+
+      <h3>HSIC: The Hilbert-Schmidt Independence Criterion</h3>
+
+      <p>
+        Classical correlation only captures <em>linear</em> relationships. HSIC captures <em>all</em> forms of dependence by embedding distributions into a Hilbert space.
+      </p>
+
+      <div class="hypothesis-box">
+        <div class="label">Theorem (Gretton et al., 2005)</div>
+        <p>
+          For characteristic kernels, $\text{HSIC}(X, Y) = 0$ if and only if $X$ and $Y$ are statistically independent.
+        </p>
+      </div>
+
+      <p>
+        HSIC measures the covariance between kernel evaluations:
+      </p>
+
+      <div class="math-block">
+        $$\text{HSIC}(X, Y) = \text{Cov}_{(x,y), (x',y')}\big[k(x, x'), l(y, y')\big]$$
+        <div class="caption">
+          <strong>Interpretation:</strong> If $X$ and $Y$ are dependent, similar $x$-values should co-occur with similar $y$-values.
+        </div>
+      </div>
+
+      <h4>The Empirical Estimator</h4>
+
+      <div class="math-block">
+        $$\widehat{\text{HSIC}}(K, L) = \frac{1}{(n-1)^2} \text{tr}(KHLH)$$
+        <div class="caption">
+          $H = I_n - \frac{1}{n}\mathbf{1}\mathbf{1}^\top$ is the centering matrix.
+        </div>
+      </div>
+
+      <h3>From HSIC to CKA: Normalization</h3>
+
+      <div class="math-block">
+        $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K) \cdot \text{HSIC}(L, L)}}$$
+        <div class="caption">
+          CKA is bounded between 0 and 1. CKA = 1 means perfect alignment.
+        </div>
+      </div>
+
+      <p>
+        CKA can also be interpreted as the cosine of the angle between centered kernel matrices when viewed as vectors.
+      </p>
+
+      <h3>The Problem with CKA: Global Domination</h3>
+
+      <p>
+        CKA is dominated by <strong>global structure</strong>—particularly the largest principal components. Two representations might have different local structure but similar global clusters, leading to high CKA.
+      </p>
+
+      <h3>CKNNA: Focusing on Local Structure</h3>
+
+      <p>
+        <strong>Centered Kernel Nearest Neighbor Alignment (CKNNA)</strong> restricts comparison to local neighborhoods.
+      </p>
+
+      <div class="definition">
+        <div class="term">Definition: Mutual k-NN</div>
+        <p>
+          Points $i$ and $j$ are <strong>mutual k-nearest neighbors</strong> if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is among the $k$ closest points to $j$.
+        </p>
+      </div>
+
+      <div class="math-block">
+        $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
+        <div class="caption">
+          $M_k$ is the mutual k-NN mask. Only mutual k-NN pairs contribute to the similarity score.
+        </div>
+      </div>
+
+      <div class="insight">
+        By zeroing out non-local pairs, CKNNA asks: "Do these representations agree on similarity structure <em>within</em> local neighborhoods?"
+      </div>
+    </section>
+
+    <!-- ==================== RESEARCH DIRECTION ==================== -->
+    <section id="research-direction">
+      <h2>Our Research Direction</h2>
+
+      <div class="key-question">
+        <strong>Key Question 1</strong>
+        At what point during training does a model's representation start converging toward its final form?
+      </div>
+
+      <div class="key-question">
+        <strong>Key Question 2</strong>
+        Can we observe the phenomenon of <em>grokking</em> through the lens of representation analysis?
+      </div>
+
+      <h3>A Brief Introduction to Grokking</h3>
+
+      <div class="definition">
+        <div class="term">Grokking</div>
+        <p>
+          A phenomenon where neural networks suddenly generalize long after achieving perfect training accuracy. The model appears to "memorize" initially, then undergoes a delayed phase transition to genuine understanding.
+        </p>
+      </div>
+
+      <p>
+        We hypothesize that grokking corresponds to a <strong>representational phase transition</strong>:
+      </p>
+
+      <ul>
+        <li><strong>Memorization phase:</strong> Complex, data-specific representation.</li>
+        <li><strong>Grokking transition:</strong> Representation simplifies and reorganizes.</li>
+        <li><strong>Generalization phase:</strong> Converged to something more canonical.</li>
+      </ul>
+
+      <div class="insight">
+        If this hypothesis is correct, our representational metrics should <em>detect</em> this transition.
+      </div>
+    </section>
+
+    <!-- ==================== EXPERIMENTS ==================== -->
+    <section id="experiments">
+      <h2>Experiment Setup</h2>
+
+      <h3>Model: The Pythia Suite</h3>
+
+      <p>
+        We use the <strong>Pythia</strong> family of language models, which provides dense checkpoints throughout training.
+      </p>
+
+      <ul>
+        <li><strong>Multiple scales:</strong> Models from 70M to 12B parameters.</li>
+        <li><strong>Consistent training:</strong> All trained on The Pile with same hyperparameters.</li>
+        <li><strong>Dense checkpoints:</strong> Steps 0, 1, 2, 4, 8, 16, ..., up to 143,000.</li>
+      </ul>
+
+      <h3>Data: WikiText-2</h3>
+
+      <p>
+        We use the <strong>WikiText-2-raw-v1</strong> dataset for computing representations:
+      </p>
+
+      <ul>
+        <li><strong>150 samples</strong> for dynamics experiments (k=16)</li>
+        <li><strong>400 samples</strong> for cross-model size comparisons (k=100)</li>
+      </ul>
+
+      <h3>Experimental Protocol</h3>
+
+      <h4>Experiment 1: Training Dynamics</h4>
+      <p>
+        For a single Pythia model, compare each checkpoint's representation against the final checkpoint using both CKA and CKNNA.
+      </p>
+
+      <h4>Experiment 2: Cross-Model Scale Comparison</h4>
+      <p>
+        Compare final representations across Pythia models of different sizes to test PRH predictions.
+      </p>
+
+      <h4>Experiment 3: Layer-Wise Analysis</h4>
+      <p>
+        Repeat dynamics analysis at different layers to understand hierarchical convergence patterns.
+      </p>
+    </section>
+
+    <!-- ==================== RESULTS ==================== -->
+    <section id="results">
+      <h2>Experiment Results</h2>
+
+      <h3>Result 1: Training Dynamics Reveal a Surprising Divergence</h3>
+
+      <figure class="figure-wide">
+        <img src="images/dynamics-final-layer.png" alt="CKA and CKNNA during training"/>
+        <figcaption>
+          <strong>Figure 1: Representation Convergence During Training.</strong>
+          CKA (blue) shows non-monotonic behavior with a sharp dip around step 20k-40k. CKNNA (orange) remains stable above 0.995 throughout.
+        </figcaption>
+      </figure>
+
+      <h4>What's Happening Here?</h4>
+
+      <ul>
+        <li><strong>Local structure is learned early and preserved.</strong> The stable CKNNA indicates the model quickly learns which points are similar.</li>
+        <li><strong>Global structure undergoes reorganization.</strong> The CKA dip shows the overall geometry is changing while local relationships are preserved.</li>
+      </ul>
+
+      <div class="insight">
+        Think of it like rearranging furniture in a house. Each room (local neighborhood) keeps its layout, but the rooms are being repositioned relative to each other.
+      </div>
+
+      <h3>Result 2: Deep Dive into the Reorganization Phase</h3>
+
+      <figure class="figure-wide">
+        <img src="images/kernel-analysis-256.png" alt="Kernel analysis at checkpoint 256"/>
+        <figcaption>
+          <strong>Figure 2: Kernel Analysis at Checkpoint 256.</strong>
+          Local pairs correlation (r=0.995) is much tighter than global pairs (r=0.965).
+        </figcaption>
+      </figure>
+
+      <figure class="figure-wide">
+        <img src="images/kernel-analysis-4000.png" alt="Kernel analysis at checkpoint 4000"/>
+        <figcaption>
+          <strong>Figure 3: Kernel Analysis at Checkpoint 4000.</strong>
+          Global pairs have improved to r=0.980 while local pairs remain at r=0.994.
+        </figcaption>
+      </figure>
+
+      <h3>Result 3: Layer-Specific Convergence Patterns</h3>
+
+      <figure class="figure-wide">
+        <img src="images/layer-12-convergence.png" alt="Layer 12 convergence"/>
+        <figcaption>
+          <strong>Figure 4: Convergence at Layer 12.</strong>
+          Middle layers stabilize faster and show less pronounced CKA dips.
+        </figcaption>
+      </figure>
+
+      <h3>Result 4: Model Scale and Representation Alignment</h3>
+
+      <figure class="figure-wide">
+        <img src="images/scale-alignment.png" alt="Alignment vs model size"/>
+        <figcaption>
+          <strong>Figure 5: Alignment Across Model Sizes.</strong>
+          Larger model pairs show higher alignment, supporting the PRH.
+        </figcaption>
+      </figure>
+
+      <div class="hypothesis-box">
+        <div class="label">Key Finding 1: Local Before Global</div>
+        <p>Models learn local similarity structure early and preserve it. Global geometry continues to evolve.</p>
+      </div>
+
+      <div class="hypothesis-box">
+        <div class="label">Key Finding 2: Non-Monotonic Convergence</div>
+        <p>There is a distinct reorganization phase where global structure changes while local structure is preserved.</p>
+      </div>
+
+      <div class="hypothesis-box">
+        <div class="label">Key Finding 3: Scale Drives Convergence</div>
+        <p>Larger models show higher mutual alignment, supporting the Platonic Representation Hypothesis.</p>
+      </div>
+    </section>
+
+    <!-- ==================== REFINED HYPOTHESIS ==================== -->
+    <section id="refined-hypothesis">
+      <h2>Refining the Platonic Hypothesis</h2>
+
+      <p>
+        Our findings suggest a more nuanced formulation: <strong>alignment should happen primarily locally, within semantic neighborhoods</strong>.
+      </p>
+
+      <h3>The Lobe Structure of Representations</h3>
+
+      <p>
+        Neural networks have multi-scale structure:
+      </p>
+
+      <ul>
+        <li><strong>Atomic scale:</strong> Local crystal-like structures.</li>
+        <li><strong>Intermediate scale:</strong> Semantic "lobes" like brain regions.</li>
+        <li><strong>Galaxy scale:</strong> Global organization of lobes.</li>
+      </ul>
+
+      <div class="hypothesis-box">
+        <div class="label">Refined Platonic Representation Hypothesis</div>
+        <p>
+          For sufficiently capable models, the representation within each semantic lobe should be equivalent up to <em>local</em> rotation and scaling. Different models may organize globally differently while agreeing locally.
+        </p>
+      </div>
+
+      <h3>Why This Explains Our Results</h3>
+
+      <ul>
+        <li><strong>CKNNA focuses on local neighborhoods</strong>—exactly what should align.</li>
+        <li><strong>CKA is dominated by global structure</strong>—where alignment is not guaranteed.</li>
+        <li><strong>The CKA dip</strong> corresponds to global reorganization while local structure remains stable.</li>
+      </ul>
+
+      <div class="insight">
+        The refined hypothesis provides a principled reason to prefer CKNNA: it directly measures what the hypothesis claims should align.
+      </div>
+    </section>
+
+    <!-- ==================== CONCLUSION ==================== -->
+    <section id="conclusion">
+      <h2>Conclusion</h2>
+
+      <h3>What We Found</h3>
+
+      <h4>1. Local Before Global</h4>
+      <p>Models establish local similarity structure early and preserve it. Global geometry continues evolving.</p>
+
+      <h4>2. Non-Monotonic Convergence</h4>
+      <p>There's a distinct "reorganization phase" that may correspond to a transition from memorization to generalization.</p>
+
+      <h4>3. Metrics Reveal Different Stories</h4>
+      <p>CKA sees global structure; CKNNA focuses on local neighborhoods. Using both reveals dynamics that either alone would miss.</p>
+
+      <h3>Novel Contributions</h3>
+
+      <ul>
+        <li><strong>Dynamics perspective:</strong> Applying representation analysis to learning dynamics, not just fixed models.</li>
+        <li><strong>Connection to grokking:</strong> The non-monotonic pattern suggests links between representation reorganization and generalization transitions.</li>
+        <li><strong>Refined hypothesis:</strong> Local alignment may be what matters for transfer and generalization.</li>
+      </ul>
+
+      <h3>Future Directions</h3>
+
+      <ul>
+        <li>Systematic study across model scales.</li>
+        <li>Explicit grokking experiments on algorithmic tasks.</li>
+        <li>Cross-modal analysis for vision and language models.</li>
+        <li>Theoretical foundations for why local stabilizes before global.</li>
+      </ul>
+    </section>
+
+    <!-- ==================== REFERENCES ==================== -->
+    <section id="references">
+      <h2>References</h2>
+
+      <ol>
+        <li>
+          <strong>Huh, M., Cheung, B., Wang, T., & Isola, P. (2024).</strong>
+          <em>The Platonic Representation Hypothesis.</em> ICML.
+        </li>
+        <li>
+          <strong>Biderman, S., et al. (2023).</strong>
+          <em>Pythia: A Suite for Analyzing Large Language Models.</em> ICML.
+        </li>
+        <li>
+          <strong>Kornblith, S., et al. (2019).</strong>
+          <em>Similarity of Neural Network Representations Revisited.</em> ICML.
+        </li>
+        <li>
+          <strong>Gretton, A., et al. (2005).</strong>
+          <em>Measuring Statistical Dependence with Hilbert-Schmidt Norms.</em>
+        </li>
+        <li>
+          <strong>Power, A., et al. (2022).</strong>
+          <em>Grokking: Generalization Beyond Overfitting.</em> ICLR Workshop.
+        </li>
+        <li>
+          <strong>Anthropic (2023).</strong>
+          <em>Scaling Monosemanticity.</em>
+        </li>
+        <li>
+          <strong>Mikolov, T., et al. (2013).</strong>
+          <em>Linguistic Regularities in Continuous Space Word Representations.</em>
+        </li>
+        <li>
+          <strong>Merity, S., et al. (2017).</strong>
+          <em>Pointer Sentinel Mixture Models.</em> ICLR.
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <p>Graduate Course Project · Deep Learning · 2024</p>
+    </div>
+  </footer>
+
+  <script>
+    // Progress bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progress').style.width = scrolled + '%';
+    });
+
+    // Active nav link
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('nav a');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (scrollY >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
       });
 
-      // Active nav link
-      const sections = document.querySelectorAll("section[id]");
-      const navLinks = document.querySelectorAll("nav a");
-
-      window.addEventListener("scroll", () => {
-        let current = "";
-        sections.forEach((section) => {
-          const sectionTop = section.offsetTop;
-          if (scrollY >= sectionTop - 100) {
-            current = section.getAttribute("id");
-          }
-        });
-
-        navLinks.forEach((link) => {
-          link.classList.remove("active");
-          if (link.getAttribute("href").slice(1) === current) {
-            link.classList.add("active");
-          }
-        });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href').slice(1) === current) {
+          link.classList.add('active');
+        }
       });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>

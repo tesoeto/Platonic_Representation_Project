@@ -1,0 +1,123 @@
+<!-- Section: Refining the Hypothesis -->
+<section id="refined-hypothesis">
+  <h2>Refining the Platonic Hypothesis</h2>
+
+  <p>
+    Our experimental findings—particularly the divergence between CKA and CKNNA—suggest the need for a more nuanced formulation of the Platonic Representation Hypothesis. In this section, we develop this refined hypothesis, connecting it to recent discoveries about the structure of neural network representations.
+  </p>
+
+  <h3>The Lobe Structure of Representations</h3>
+
+  <p>
+    Recent work from Anthropic and others has revealed that neural network representations have rich structure at multiple scales. Using Sparse Autoencoders (SAEs), researchers have observed that:
+  </p>
+
+  <ul>
+    <li><strong>Atomic scale:</strong> Individual features form local crystal-like structures, approximately satisfying the linear representation hypothesis.</li>
+    <li><strong>Intermediate scale:</strong> Neurons that fire to similar concepts cluster together in "lobes"—remarkably similar to the structure of the human brain as seen in fMRI imaging.</li>
+    <li><strong>Galaxy scale:</strong> These lobes are organized into larger patterns, forming the global geometry of the representation space.</li>
+  </ul>
+
+  <p>
+    This structure suggests a natural way to refine the PRH: instead of demanding global alignment, we should expect alignment to happen <em>primarily at the local, lobe level</em>.
+  </p>
+
+  <h3>A Toy Model for Understanding</h3>
+
+  <p>
+    Consider grouping locally similar vectors into neighborhoods $L_i$, where each neighborhood represents vectors with similar semantic meaning. We can represent each neighborhood as a single node in a graph:
+  </p>
+
+  <div class="analogy">
+    <strong>The Clustering Perspective:</strong> Imagine running K-means clustering on the representation space, but with a twist: instead of picking random initial centroids, we identify which neuron fires most strongly for each data point and use those as seeds. This grounds the clustering in the model's own internal organization.
+  </div>
+
+  <p>
+    We connect these neighborhood nodes with edges $e \in E$, where edges represent information flow between neighborhoods during task completion. This gives us a graph structure on top of the representation space.
+  </p>
+
+  <h3>The Refined Hypothesis: Local Alignment</h3>
+
+  <p>
+    Our central hypothesis is that <strong>alignment should happen primarily locally, within these semantic neighborhoods</strong>. Specifically:
+  </p>
+
+  <div class="hypothesis-box">
+    <div class="label">Refined Platonic Representation Hypothesis</div>
+    <p>
+      For sufficiently capable models, the representation within each semantic lobe should be equivalent up to <em>local</em> rotation and scaling. That is, for lobe $L_i$ with centroid $\mu_i$, the vector space $\{x - \mu_i \mid x \in L_i\}$ should be equivalent to $\{\alpha T(x - \mu_i) \mid x \in L_i\}$ where $T$ is an orthogonal transformation and $\alpha$ is a scalar.
+    </p>
+  </div>
+
+  <p>
+    This is weaker than demanding global alignment but stronger than demanding no structure at all. It says: different models may organize their representation spaces differently at the global level, but within each semantic neighborhood, they should agree.
+  </p>
+
+  <h4>Preserving the Linear Representation Hypothesis</h4>
+
+  <p>
+    The classic linear representation hypothesis states that semantic relationships are encoded as vector differences: $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$. Under our refined hypothesis, this becomes:
+  </p>
+
+  <div class="math-block">
+    $$L(\text{King}) - L(\text{Queen}) \approx L(\text{Man}) - L(\text{Woman})$$
+    <div class="caption">
+      Where $L(\cdot)$ returns the centroid of the lobe containing the input. The relationship holds at the level of neighborhood centroids, which is sufficient for capturing semantic structure as long as the lobes are not too large.
+    </div>
+  </div>
+
+  <h3>Why This Explains Our Results</h3>
+
+  <p>
+    The refined hypothesis elegantly explains why CKNNA outperforms CKA in our experiments:
+  </p>
+
+  <ul>
+    <li><strong>CKNNA focuses on local neighborhoods.</strong> By restricting to mutual k-NN pairs, CKNNA measures alignment within semantic lobes—exactly what our hypothesis predicts should align.</li>
+    <li><strong>CKA is dominated by global structure.</strong> CKA includes all pairs, including inter-lobe relationships where alignment is not guaranteed.</li>
+    <li><strong>The CKA dip during training</strong> corresponds to global reorganization—the model restructuring how lobes relate to each other—while local structure (captured by CKNNA) remains stable.</li>
+  </ul>
+
+  <div class="insight">
+    The refined hypothesis provides a principled reason to prefer CKNNA: it directly measures what the hypothesis claims should align. CKNNA isn't just empirically better—it's theoretically motivated by the structure of neural representations.
+  </div>
+
+  <h3>Implications for the Platonic Ideal</h3>
+
+  <p>
+    Returning to Plato's cave allegory: our refinement suggests that different shadows (modalities, models) may capture the same local structure of the Forms, even if their global projections differ. The "Form of Cat" might manifest as a coherent neighborhood in both vision and language models, with similar internal geometry, even if these neighborhoods are positioned differently in the overall space.
+  </p>
+
+  <p>
+    This has implications for multimodal alignment:
+  </p>
+
+  <ul>
+    <li><strong>Local alignment suffices.</strong> We don't need perfect global alignment between vision and language models—as long as their semantic neighborhoods align, cross-modal transfer can work.</li>
+    <li><strong>Stitching representations.</strong> If local structure aligns, we might be able to "stitch" together representations from different modalities by matching neighborhoods, without requiring a single global transformation.</li>
+    <li><strong>Robustness to global perturbations.</strong> Models with aligned local structure but different global organization might still perform similarly on tasks that depend on local similarity (retrieval, few-shot learning).</li>
+  </ul>
+
+  <h3>Limitations and Future Directions</h3>
+
+  <p>
+    We acknowledge several limitations of this refined hypothesis:
+  </p>
+
+  <ul>
+    <li><strong>Theoretical gaps:</strong> We don't yet have a formal proof that local alignment should emerge from training dynamics. This is a conjecture based on empirical observations.</li>
+    <li><strong>Quantifying "lobes":</strong> The notion of semantic neighborhoods is intuitive but not precisely defined. How do we identify lobe boundaries in practice?</li>
+    <li><strong>Resource constraints:</strong> We haven't been able to develop comprehensive tests of this hypothesis across diverse models and modalities.</li>
+  </ul>
+
+  <p>
+    Future work should:
+  </p>
+
+  <ul>
+    <li>Develop formal criteria for identifying and validating semantic lobes.</li>
+    <li>Test local alignment across vision, language, and multimodal models.</li>
+    <li>Explore whether training dynamics can be modified to encourage faster local alignment.</li>
+    <li>Investigate the connection between local alignment and downstream task performance.</li>
+  </ul>
+</section>

@@ -1,0 +1,114 @@
+<!-- Section: Experiment Setup -->
+<section id="experiments">
+  <h2>Experiment Setup</h2>
+
+  <p>
+    To study representation dynamics, we need models with checkpoints saved throughout training—a rare resource, since most released models only provide final weights. Fortunately, the Pythia suite was designed exactly for this purpose.
+  </p>
+
+  <h3>Model: The Pythia Suite</h3>
+
+  <p>
+    We use the <strong>Pythia</strong> family of language models, which provides an unparalleled resource for studying training dynamics. Key properties:
+  </p>
+
+  <ul>
+    <li><strong>Multiple scales:</strong> Models range from 70M to 12B parameters, enabling us to test how size affects convergence. For our experiments, we focus on models from 70M to 2.8B parameters.</li>
+    <li><strong>Consistent training:</strong> All models were trained on The Pile dataset with the same hyperparameters (relative to scale), isolating the effect of model capacity.</li>
+    <li><strong>Dense checkpoints:</strong> Checkpoints saved at steps 0, 1, 2, 4, 8, 16, 32, ..., up to 143,000—providing fine-grained visibility into the training trajectory.</li>
+  </ul>
+
+  <div class="insight">
+    The logarithmic spacing of early checkpoints (1, 2, 4, 8, ...) is crucial. Early training is where the most dramatic changes occur, so dense sampling there reveals dynamics that uniform spacing would miss.
+  </div>
+
+  <h3>Data: WikiText-2</h3>
+
+  <p>
+    We use the <strong>WikiText-2-raw-v1</strong> dataset for computing representations. This dataset contains high-quality Wikipedia articles, providing diverse natural language samples. Key considerations:
+  </p>
+
+  <ul>
+    <li><strong>Representative text:</strong> Wikipedia covers a broad range of topics, ensuring we probe general language understanding rather than domain-specific features.</li>
+    <li><strong>Consistent evaluation:</strong> The same samples are used across all checkpoints and model sizes, enabling direct comparison.</li>
+    <li><strong>Sample sizes:</strong> We use 150 samples for dynamics experiments and 400 samples for cross-model size comparisons, balancing statistical power with computational cost.</li>
+  </ul>
+
+  <h3>Experimental Protocol</h3>
+
+  <h4>Experiment 1: Training Dynamics</h4>
+
+  <p>
+    For a single Pythia model, we measure how representations evolve during training:
+  </p>
+
+  <ol>
+    <li><strong>Select checkpoints:</strong> We sample checkpoints across the full training trajectory—from step 1 to step 143,000.</li>
+    <li><strong>Extract representations:</strong> For our fixed set of 150 WikiText samples, extract the hidden states at the final layer of each checkpoint.</li>
+    <li><strong>Compute kernel matrices:</strong> Using a linear kernel, compute the $150 \times 150$ similarity matrix $K_t$ for checkpoint $t$ and $K_{\text{final}}$ for the final checkpoint.</li>
+    <li><strong>Compute alignment:</strong> Calculate both CKA and CKNNA (with $k=16$) between $K_t$ and $K_{\text{final}}$.</li>
+  </ol>
+
+  <p>
+    This produces alignment curves as a function of training step, revealing the temporal dynamics of convergence.
+  </p>
+
+  <h4>Experiment 2: Cross-Model Scale Comparison</h4>
+
+  <p>
+    We compare final representations across Pythia models of different sizes:
+  </p>
+
+  <ol>
+    <li><strong>Select model pairs:</strong> We compare pairs of models from the Pythia family (e.g., 70M vs 160M, 160M vs 410M, etc.).</li>
+    <li><strong>Extract representations:</strong> For 400 WikiText samples, extract final-layer hidden states from the final checkpoint of each model.</li>
+    <li><strong>Compute alignment:</strong> Calculate CKA and CKNNA (with $k=100$, appropriate for the larger sample size) between each pair.</li>
+  </ol>
+
+  <p>
+    This tests the PRH prediction that larger models should have more aligned representations.
+  </p>
+
+  <h4>Experiment 3: Layer-Wise Analysis</h4>
+
+  <p>
+    Not all layers are equal. Early layers extract low-level features; later layers encode abstract, task-relevant information. We repeat Experiment 1 at multiple layers:
+  </p>
+
+  <ul>
+    <li><strong>Final layer:</strong> Most abstract representations, expected to show strongest PRH effects.</li>
+    <li><strong>Middle layers (e.g., layer 12):</strong> Intermediate processing, potentially faster convergence.</li>
+    <li><strong>Early layers:</strong> Low-level features, expected to stabilize quickly.</li>
+  </ul>
+
+  <h3>Choice of Parameters</h3>
+
+  <h4>Why k = 16 for Dynamics?</h4>
+
+  <p>
+    With 150 samples, $k=16$ means each neighborhood contains about 10% of the data. This balances:
+  </p>
+
+  <ul>
+    <li><strong>Locality:</strong> Small enough to capture genuinely local structure.</li>
+    <li><strong>Statistical stability:</strong> Large enough that neighborhood membership is robust to noise.</li>
+  </ul>
+
+  <h4>Why k = 100 for Scale Comparison?</h4>
+
+  <p>
+    With 400 samples, we can afford a larger $k$ while maintaining locality (~25% of data). The larger sample size justifies larger neighborhoods, improving statistical power for detecting subtle alignment differences.
+  </p>
+
+  <h4>Why Linear Kernel?</h4>
+
+  <p>
+    We use the linear kernel $k(a, b) = a^\top b$ throughout. This is the standard choice for neural network representations because:
+  </p>
+
+  <ul>
+    <li>It captures the geometry of the representation space directly.</li>
+    <li>CKA with linear kernel is invariant to orthogonal transformations and isotropic scaling—exactly the invariances we want.</li>
+    <li>It's computationally efficient for high-dimensional representations.</li>
+  </ul>
+</section>
