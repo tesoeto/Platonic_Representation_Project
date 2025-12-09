@@ -96,7 +96,7 @@
         <p>
           To explain such phenomenon, the
           <strong>Platonic Representation Hypothesis</strong> was introduced
-          <span class="citation">[Huh et al., 2024]</span>. Just as Plato argued
+          <span class="citation">[1]</span>. Just as Plato argued
           that our perceived reality consists of imperfect shadows of ideal
           "Forms," the Platonic Representation Hypothesis suggests that
           different models and modalities are approximating the same underlying
@@ -112,7 +112,7 @@
           hypothesis, taking into account of the recent work that shows neurons
           which fire to similar concepts tend to form local clusters that
           resemble lobes of the brain
-          <span class="citation">[Tegmark, 2025]</span>.
+          <span class="citation">[9]</span>.
         </p>
 
         <div class="key-question">
@@ -130,7 +130,7 @@
           It's widely accepted in the ML community that direction of the
           representation space embeds semantic meaning, and that we have an
           approximate linear relation of $\text{King} - \text{Queen} \approx
-          \text{Man} - \text{Woman}$[citation]. Mathematically, it's regarded
+          \text{Man} - \text{Woman}$<span class="citation">[10]</span>. Mathematically, it's regarded
           that each feature is represented by a unit vector $d_i$ in the
           representation space, and the general vector can be written as $\sum_i
           a_i d_i$. This is known as the
@@ -163,7 +163,7 @@
         <p>
           Using SAE, it's been explored that there are
           <strong>three scales</strong> of the representation space: Atomic,
-          Intermediate, and Galaxy scales[citation]. The atomic scale contains
+          Intermediate, and Galaxy scales<span class="citation">[9]</span>. The atomic scale contains
           crystal structures with parallelogram or trapezoid faces that
           approximately satisfy the linear representation hypothesis. In the
           intermediate scale, it's observed that neurons that fire to similar
@@ -261,7 +261,7 @@
 
         <div class="insight">
           It's plausible that the third hypothesis is related to
-          Grokking[citation], where the model first remembers the datasets then
+          Grokking<span class="citation">[4]</span>, where the model first remembers the datasets then
           as the training epoch increases, the model tends to a simpler
           solution. This suggests some form of implicit regularization driving
           models toward more compressed representations.
@@ -275,11 +275,11 @@
         <p>
           Naively, if there exists a bijective map between two representations X
           and Y, they should encode the same amount of information so it's
-          expected that they should perform the same, given an optimal decoder.
+          expected that they should perform the same, given an optimal decoder<span class="citation">[11]</span>.
           As it is the case that invertible linear transformations belong to
           this set, we should expect that a good kernel should be invariant
           under any transformation $T \in \text{GL}_n(\mathbb{R})$. However, as
-          argued in the literature, this would imply that scale of directions
+          argued in the literature<span class="citation">[3]</span>, this would imply that scale of directions
           doesn't matter.
         </p>
 
@@ -358,7 +358,7 @@
 
         <p>
           We use the <strong>Pythia</strong> suite of language models
-          <span class="citation">[Biderman et al., 2023]</span>, which provides
+          <span class="citation">[2]</span>, which provides
           a unique resource for studying training dynamics. Unlike most released
           models, Pythia includes checkpoints saved throughout training,
           allowing us to analyze how representations evolve over time.
@@ -1046,6 +1046,37 @@
               Compositionality.</span
             >
             <span class="ref-venue">NeurIPS 2013.</span>
+          </li>
+          <li>
+            <span class="ref-authors"
+              >Li, Y., Michaud, E. J., Baek, D. D., Engels, J., Sun, X., & Tegmark,
+              M.</span
+            >
+            (2025).
+            <span class="ref-title"
+              >The Geometry of Concepts: Sparse Autoencoder Feature Structure.</span
+            >
+            <span class="ref-venue">Entropy 27(4).</span>
+          </li>
+          <li>
+            <span class="ref-authors">Mikolov, T., Chen, K., Corrado, G., & Dean, J.</span>
+            (2013).
+            <span class="ref-title">Efficient Estimation of Word Representations in Vector Space.</span>
+            <span class="ref-venue">ICLR 2013.</span>
+          </li>
+          <li>
+            <span class="ref-authors"
+              >Li, Y., Yosinski, J., Clune, J., Lipson, H., and Hopcroft, J.</span
+            >
+            (2015).
+            <span class="ref-title"
+              >Convergent learning: Do different neural networks learn the same
+              representations?</span
+            >
+            <span class="ref-venue"
+              >NIPS 2015 Workshop on Feature Extraction: Modern Questions and
+              Challenges.</span
+            >
           </li>
         </ol>
       </section>
