@@ -388,7 +388,7 @@
 
         <p>
           For our experiments, we use text samples from the
-          <strong>WikiText-2-raw-v1</strong> dataset. This dataset provides
+          <strong>WikiText-2-raw-v1</strong> dataset<span class="citation">[12]</span>. This dataset provides
           high-quality Wikipedia articles that serve as a good test bed for
           analyzing language model representations. The text is relatively clean
           and covers diverse topics, making it suitable for probing general
@@ -792,7 +792,7 @@
           <p>
             Instead of aligning globally, the alignment should happen primarily
             <strong>locally</strong>. We could treat each neighborhood as a
-            subspace and demand invariance under rotation and local scaling.
+            subspace and demand invariance under rotation and local scaling. Models may find different global optimal arrangement of the local clusters while maintaining similar performances
           </p>
         </div>
 
@@ -1078,6 +1078,19 @@
               Challenges.</span
             >
           </li>
+          <li>
+            <span class="ref-authors"
+              >Merity, S., Xiong, C., Bradbury, J., & Socher, R.</span
+            >
+            (2016).
+            <span class="ref-title"
+              >WikiText-2-raw-v1: Long-Term Dependency Language Modeling Dataset.</span
+            >
+            <span class="ref-venue"
+              >Salesforce Research. Available at Hugging Face: https://huggingface.co/datasets/Salesforce/wikitext (configuration: wikitext-2-raw-v1).</span
+            >
+          </li>
+          
         </ol>
       </section>
     </main>
