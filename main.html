@@ -65,7 +65,7 @@
   </p>
 
   <p>
-    To explain such phenomenon, the <strong>Platonic Representation Hypothesis</strong> was introduced <span class="citation">[Huh et al., 2024]</span>. To build upon this work, in this paper, we present a refined platonic representation hypothesis, taking into account of the recent work that shows neurons which fire to similar concepts tend to form local clusters that resemble lobes of the brain <span class="citation">[Anthropic, 2024]</span>.
+    To explain such phenomenon, the <strong>Platonic Representation Hypothesis</strong> was introduced <span class="citation">[Huh et al., 2024]</span>. Just as Plato argued that our perceived reality consists of imperfect shadows of ideal "Forms," the Platonic Representation Hypothesis suggests that different models and modalities are approximating the same underlying reality from different vantage points. The authors hypothesized that there exists an idealized statistical model $P(z)$ that governs the events we observe in the universe, and the observations we make about objects are only partial information of the original object. Similar to the Cave allegory made by Plato, word descriptions and image descriptions are merely shadows of the original object. In our blog, we study the evolution and alignment of the representation space and use the Platonic Representation Hypothesis to explain our findings, and in the appendix we present a refined platonic representation hypothesis, taking into account of the recent work that shows neurons which fire to similar concepts tend to form local clusters that resemble lobes of the brain <span class="citation">[Tegmark, 2025]</span>.
   </p>
 
   <div class="key-question">
@@ -73,20 +73,16 @@
     We run experiments to demonstrate the evolution of the alignment of the model over training epoch. We observe that the first few layers align quickly, while for the later layers we observe a phase of plateau followed by a sharp transition of alignment—a phenomenon reminiscent of Grokking.
   </div>
 
-  <p>
-    The philosophical implications are profound. Just as Plato argued that our perceived reality consists of imperfect shadows of ideal "Forms," the Platonic Representation Hypothesis suggests that different models and modalities are approximating the same underlying reality from different vantage points. The authors hypothesized that there exists an idealized statistical model $P(z)$ that governs the events we observe in the universe, and the observations we make about objects are only partial information of the original object. Similar to the Cave allegory made by Plato, word descriptions and image descriptions are merely shadows of the original object.
-  </p>
-
   <h3>The Linear Representation Hypothesis</h3>
 
   <p>
-    It's widely accepted in the ML community that direction of the representation space embeds semantic meaning, and that we have an approximate linear relation of $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$. Mathematically, it's regarded that each feature is represented by a unit vector $d_i$ in the representation space, and the general vector can be written as $\sum_i a_i d_i$. This is known as the <strong>linear representation hypothesis</strong>. However, this relation only holds approximately.
+    It's widely accepted in the ML community that direction of the representation space embeds semantic meaning, and that we have an approximate linear relation of $\text{King} - \text{Queen} \approx \text{Man} - \text{Woman}$[citation]. Mathematically, it's regarded that each feature is represented by a unit vector $d_i$ in the representation space, and the general vector can be written as $\sum_i a_i d_i$. This is known as the <strong>linear representation hypothesis</strong>. However, this relation only holds approximately.
   </p>
 
   <h3>Scales of Representation Space</h3>
 
   <p>
-    To further understand the representation space, tools such as Sparse Auto-Encoder (SAE) were introduced, where we take the first k layers of the LLM and introduce an Auto-Encoder with the loss designed to make the features sparse. We denote $x$ to be the input to SAE, $f(x) = \text{Encoder}(x)$ to be the latent representation, and $\hat{x} = \text{Decoder}(f)$ to be the reconstructed vector. We freeze the first k layers and train the head by the following loss:
+    To further understand the representation space, tools such as Sparse Auto Encoder (SAE) were introduced, where we take the first k layers of the LLM and introduce an Auto-Encoder with the loss designed to make the features sparse. We denote $x$ to be the input to SAE, $f(x) = \text{Encoder}(x)$ to be the latent representation, and $\hat{x} = \text{Decoder}(f)$ to be the reconstructed vector. We freeze the first k layers and train the head by the following loss:
   </p>
 
   <div class="math-block">
@@ -97,7 +93,7 @@
   </div>
 
   <p>
-    Using SAE, it's been explored that there are <strong>three scales</strong> of the representation space: Atomic, Intermediate, and Galaxy scales. The atomic scale contains crystal structures with parallelogram or trapezoid faces that approximately satisfy the linear representation hypothesis. In the intermediate scale, it's observed that neurons that fire to similar concepts, such as coding and math, are clustered together—similar to lobes of the brain seen in fMRI images.
+    Using SAE, it's been explored that there are <strong>three scales</strong> of the representation space: Atomic, Intermediate, and Galaxy scales[citation]. The atomic scale contains crystal structures with parallelogram or trapezoid faces that approximately satisfy the linear representation hypothesis. In the intermediate scale, it's observed that neurons that fire to similar concepts, such as coding and math, are clustered together—similar to lobes of the brain seen in fMRI images.
   </p>
 
   <div class="insight">
@@ -145,7 +141,7 @@
   <div class="hypothesis-box">
     <div class="label">Hypothesis 1: Convergence via Task Generality</div>
     <p>
-      As we increase the number of data points, the number of constraints put on the model increases if it performs well across the dataset. This restricts the possible hypothesis space to a small region. Think of it like solving a system of equations—more equations (data points) constrain the solution more tightly.
+      As we increase the number of data points, the number of constraints put on the model increases if it performs well across the dataset. This restricts the possible hypothesis space to a small region.
     </p>
   </div>
 
@@ -159,12 +155,12 @@
   <div class="hypothesis-box">
     <div class="label">Hypothesis 3: The Simplicity Bias</div>
     <p>
-      Larger models tend to find simpler solutions to the problems. This connects to the phenomenon of Grokking, where models first memorize the dataset then, as training continues, tend toward simpler, more generalizable solutions.
+      Larger models tend to find simpler solutions to the problems. 
     </p>
   </div>
 
   <div class="insight">
-    It's plausible that the third hypothesis is related to Grokking, where the model first remembers the datasets then as the training epoch increases, the model tends to a simpler solution. This suggests some form of implicit regularization driving models toward more compressed representations.
+    It's plausible that the third hypothesis is related to Grokking[citation], where the model first remembers the datasets then as the training epoch increases, the model tends to a simpler solution. This suggests some form of implicit regularization driving models toward more compressed representations.
   </div>
 </section>
 
@@ -192,12 +188,9 @@
   <h3>Understanding HSIC: The Core Building Block</h3>
 
   <p>
-    The Hilbert-Schmidt Independence Criterion (HSIC) measures statistical dependence between two kernel matrices. The intuition is elegant: if two representations capture similar structure, then knowing the similarity between two points in one representation should tell us about their similarity in the other representation.
+    The Hilbert-Schmidt Independence Criterion (HSIC) measures statistical dependence between two kernel matrices. The intuition is that if two representations capture similar structure, then knowing the similarity between two points in one representation should tell us about their similarity in the other representation.
   </p>
 
-  <p>
-    Recall that for regular correlation, we normalize covariance by standard deviations. CKA does the same for HSIC—$\text{HSIC}(K, K)$ measures the "self-dependence" of K, analogous to variance. The formula $\text{tr}(KHLH)/(n-1)^2$ computes: "On average, when two points have higher-than-expected similarity in representation K, do they also have higher-than-expected similarity in representation L?"
-  </p>
 
   <h3>Why CKA Falls Short: The Global Domination Problem</h3>
 
@@ -215,42 +208,8 @@
     Centered Kernel Nearest Neighbor Alignment (CKNNA) addresses CKA's limitations by restricting the comparison to local neighborhoods. The key idea is to only consider pairs of points that are mutual k-nearest neighbors.
   </p>
 
-  <div class="definition">
-    <div class="term">Mutual k-Nearest Neighbors</div>
-    <p>
-      Points $i$ and $j$ are <strong>mutual k-nearest neighbors</strong> if: (1) $j$ is among the $k$ closest points to $i$, AND (2) $i$ is among the $k$ closest points to $j$. This symmetric relationship captures robust local structure.
-    </p>
-  </div>
 
-  <p>
-    Let $M_k \in \{0, 1\}^{n \times n}$ be the mutual k-NN mask computed from the reference representation:
-  </p>
-
-  <div class="math-block">
-    $$(M_k)_{ij} = \begin{cases} 1 & \text{if } i \text{ and } j \text{ are mutual } k\text{-NN} \\ 0 & \text{otherwise} \end{cases}$$
-  </div>
-
-  <p>
-    CKNNA applies this mask to both kernel matrices before computing CKA:
-  </p>
-
-  <div class="math-block">
-    $$\text{CKNNA}_k(K, L) = \text{CKA}(K \odot M_k, L \odot M_k)$$
-    <div class="caption">
-      Where $\odot$ denotes element-wise (Hadamard) product. Only pairs that are mutual k-NN in the reference representation contribute to the similarity measure.
-    </div>
-  </div>
-
-  <h3>Why CKNNA is Better: The Local Alignment Hypothesis</h3>
-
-  <p>
-    Our refined hypothesis helps to explain why CKNNA performs better than CKA: <strong>instead of aligning globally, the alignment should happen primarily locally.</strong> CKNNA extracts only the k-nearest neighbor points that are likely to belong to the same neighborhood, while ignoring vectors that are far apart from each other that share less similarities.
-  </p>
-
-  <p>
-    We could treat each neighborhood as a subspace and demand invariance under rotation and local scaling. Specifically, the vector space $\{x - \mu_i \mid x \in L_i\}$ should be equivalent to $\{\alpha T(x - \mu_i) \mid x \in L_i\}$ with $T$ being rotation and $\alpha$ being a scaling. This preserves the linear representation hypothesis at the local level while allowing global structure to vary.
-  </p>
-
+  
   <div class="insight">
     By comparing CKA and CKNNA, we can distinguish between changes in global structure (CKA drops, CKNNA stable) and changes in local structure (both drop). This distinction proves crucial for understanding training dynamics.
   </div>
