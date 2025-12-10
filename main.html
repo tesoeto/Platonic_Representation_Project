@@ -640,7 +640,7 @@
 
         <ul>
           <li>Local pairs correlation: <strong>r ≈ 0.994</strong> (stable)</li>
-          <li>Global pairs correlation: <strong>r ≈ 0.986-0.987</strong> (depressed)</li>
+          <li>Global pairs correlation: <strong>r ≈ 0.986-0.987</strong> (decreased)</li>
         </ul>
 
         <p>
@@ -790,10 +790,10 @@
         <h3>The Lobe Structure of Representation Space</h3>
 
         <p>
-          We develop some intuitions by considering a toy model: Let's consider
-          grouping of locally similar neighbors $L_i$ that have similar
-          representations together and represent each neighbor with a node. In
-          other words, we group feature vectors that have similar meaning as a
+          We develop some intuitions by considering a toy model where every neuron represents a concept: 
+          We want to construct centriods of semantic meaning. Say we have a batch of similar inputs $x$, their 
+          representations form a lobe $X_i$ in the representation space, and
+          we let their centroid be $L_i$. In other words, we group feature vectors that have similar meaning as a
           single point. We could group the representation vectors in the same
           spirit as K-means or the EM algorithm.
         </p>
